@@ -1,0 +1,63 @@
+---
+import Layout from '../../layouts/Layout.astro'
+import ListingCard from '../../components/ListingCard.astro'
+import { getListings, getCategories } from '../../lib/supabase'
+
+export async function getStaticPaths() {
+  const categories = await getCategories('agora')
+  return categories.filter(c => !c.parent_id).map(cat => ({
+    params: { slug: cat.slug },
+    props: { category: cat },
+  }))
+}
+
+const { category } = Astro.props
+const listings = await getListings({ categoryId: category.id, status: 'active' })
+const allCategories = await getCategories('agora')
+---
+
+<Layout title={`${category.name_el} - Αγορά | Rita Samothraki`}>
+  <div class="bg-gray-50 min-h-screen">
+    <div class="bg-white border-b border-gray-200">
+      <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 md:py-12">
+        <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-6">
+          <div>
+            <div class="flex items-center gap-2 text-sm text-gray-400 mb-2">
+              <a href="/agora" class="hover:text-primary">Αγορά</a>
+              <span>/</span>
+              <span class="text-gray-600">{category.name_el}</span>
+            </div>
+            <h1 class="text-3xl md:text-4xl font-bold text-gray-900">{category.name_el}</h1>
+            <p class="text-gray-500 mt-2">{listings.length} διαθέσιμες αγγελίες</p>
+          </div>
+          <div class="flex flex-wrap gap-2">
+            <a href="/agora" class="px-4 py-2 text-sm font-medium bg-gray-100 text-gray-700 rounded-xl hover:bg-primary/10 hover:text-primary transition-colors">Όλες</a>
+            {allCategories.filter(c => !c.parent_id).map(cat => (
+              <a href={`/agora/${cat.slug}`} class={`px-4 py-2 text-sm font-medium rounded-xl transition-colors ${cat.id === category.id ? 'bg-primary text-white' : 'bg-gray-100 text-gray-700 hover:bg-primary/10 hover:text-primary'}`}>
+                {cat.name_el}
+              </a>
+            ))}
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 md:py-12">
+      {listings.length > 0 ? (
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+          {listings.map(listing => (
+            <ListingCard listing={listing} />
+          ))}
+        </div>
+      ) : (
+        <div class="text-center py-20">
+          <svg class="w-16 h-16 text-gray-300 mx-auto mb-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
+          </svg>
+          <h3 class="text-lg font-semibold text-gray-900 mb-2">Δεν υπάρχουν αγγελίες</h3>
+          <p class="text-gray-500">Προς το παρόν δεν υπάρχουν αγγελίες σε αυτή την κατηγορία.</p>
+        </div>
+      )}
+    </div>
+  </div>
+</Layout>

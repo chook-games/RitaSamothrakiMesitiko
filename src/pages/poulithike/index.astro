@@ -1,0 +1,52 @@
+---
+import Layout from '../../layouts/Layout.astro'
+import ListingCard from '../../components/ListingCard.astro'
+import { getListings, getCategories } from '../../lib/supabase'
+
+const listings = await getListings({ type: 'poulithike', status: 'sold' })
+const categories = await getCategories('poulithike')
+---
+
+<Layout title="Πουλήθηκε | Rita Samothraki">
+  <div class="bg-gray-50 min-h-screen">
+    <div class="bg-white border-b border-gray-200">
+      <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 md:py-12">
+        <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-6">
+          <div>
+            <div class="flex items-center gap-2 text-sm text-gray-400 mb-2">
+              <span class="px-2 py-0.5 bg-sold/10 text-sold text-xs font-semibold rounded-full">Πουλήθηκε</span>
+            </div>
+            <h1 class="text-3xl md:text-4xl font-bold text-gray-900">Πουλήθηκαν</h1>
+            <p class="text-gray-500 mt-2">{listings.length} ολοκληρωμένες πωλήσεις</p>
+          </div>
+          <div class="flex flex-wrap gap-2">
+            <a href="/poulithike" class="px-4 py-2 text-sm font-medium bg-primary text-white rounded-xl">Όλες</a>
+            {categories.filter(c => !c.parent_id).map(cat => (
+              <a href={`/poulithike/${cat.slug}`} class="px-4 py-2 text-sm font-medium bg-gray-100 text-gray-700 rounded-xl hover:bg-primary/10 hover:text-primary transition-colors">
+                {cat.name_el}
+              </a>
+            ))}
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 md:py-12">
+      {listings.length > 0 ? (
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+          {listings.map(listing => (
+            <ListingCard listing={listing} />
+          ))}
+        </div>
+      ) : (
+        <div class="text-center py-20">
+          <svg class="w-16 h-16 text-gray-300 mx-auto mb-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+          </svg>
+          <h3 class="text-lg font-semibold text-gray-900 mb-2">Δεν υπάρχουν αγγελίες</h3>
+          <p class="text-gray-500">Προς το παρόν δεν υπάρχουν ολοκληρωμένες πωλήσεις.</p>
+        </div>
+      )}
+    </div>
+  </div>
+</Layout>

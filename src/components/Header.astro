@@ -1,0 +1,188 @@
+---
+import { getCategories, getOfficeSettings } from '../lib/supabase'
+
+const categories = await getCategories()
+const settings = await getOfficeSettings()
+
+// Group categories by type
+const agoraCategories = categories.filter(c => c.type === 'agora')
+const enoikiasiCategories = categories.filter(c => c.type === 'enoikiasi')
+const poulithikeCategories = categories.filter(c => c.type === 'poulithike')
+---
+
+<header class="bg-white shadow-sm sticky top-0 z-50">
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+    <div class="flex items-center justify-between h-16 md:h-20">
+      <!-- Logo -->
+      <a href="/" class="flex items-center gap-3 group">
+        {settings?.logo_url ? (
+          <img src={settings.logo_url} alt={settings.name} class="h-10 w-auto" />
+        ) : (
+          <div class="w-10 h-10 bg-primary rounded-lg flex items-center justify-center text-white font-bold text-lg">
+            RS
+          </div>
+        )}
+        <div class="hidden sm:block">
+          <h1 class="text-lg font-bold text-primary leading-tight">{settings?.name || 'Rita Samothraki'}</h1>
+          <p class="text-xs text-gray-500">Μεσιτικό Γραφείο</p>
+        </div>
+      </a>
+
+      <!-- Desktop Navigation -->
+      <nav class="hidden lg:flex items-center gap-1">
+        <a href="/" class="px-4 py-2 text-sm font-medium text-gray-700 hover:text-primary hover:bg-gray-50 rounded-lg transition-colors">
+          Αρχική
+        </a>
+        
+        <!-- Αγορά Dropdown -->
+        <div class="relative group">
+          <a href="/agora" class="px-4 py-2 text-sm font-medium text-gray-700 hover:text-primary hover:bg-gray-50 rounded-lg transition-colors inline-flex items-center gap-1">
+            Αγορά
+            <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
+          </a>
+          <div class="absolute left-0 top-full pt-2 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200">
+            <div class="bg-white rounded-xl shadow-xl border border-gray-100 py-2 min-w-[220px]">
+              <a href="/agora" class="block px-4 py-2.5 text-sm text-gray-700 hover:text-primary hover:bg-gray-50 font-medium">
+                Όλες οι αγγελίες
+              </a>
+              <div class="border-t border-gray-100 my-1"></div>
+              {agoraCategories.filter(c => !c.parent_id).map(cat => (
+                <a href={`/agora/${cat.slug}`} class="block px-4 py-2.5 text-sm text-gray-700 hover:text-primary hover:bg-gray-50 transition-colors">
+                  {cat.name_el}
+                </a>
+              ))}
+            </div>
+          </div>
+        </div>
+
+        <!-- Ενοικίαση Dropdown -->
+        <div class="relative group">
+          <a href="/enoikiasi" class="px-4 py-2 text-sm font-medium text-gray-700 hover:text-primary hover:bg-gray-50 rounded-lg transition-colors inline-flex items-center gap-1">
+            Ενοικίαση
+            <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
+          </a>
+          <div class="absolute left-0 top-full pt-2 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200">
+            <div class="bg-white rounded-xl shadow-xl border border-gray-100 py-2 min-w-[220px]">
+              <a href="/enoikiasi" class="block px-4 py-2.5 text-sm text-gray-700 hover:text-primary hover:bg-gray-50 font-medium">
+                Όλες οι αγγελίες
+              </a>
+              <div class="border-t border-gray-100 my-1"></div>
+              {enoikiasiCategories.filter(c => !c.parent_id).map(cat => (
+                <a href={`/enoikiasi/${cat.slug}`} class="block px-4 py-2.5 text-sm text-gray-700 hover:text-primary hover:bg-gray-50 transition-colors">
+                  {cat.name_el}
+                </a>
+              ))}
+            </div>
+          </div>
+        </div>
+
+        <a href="/poulithike" class="px-4 py-2 text-sm font-medium text-gray-700 hover:text-primary hover:bg-gray-50 rounded-lg transition-colors">
+          Πουλήθηκε
+        </a>
+
+        <a href="/grafeio" class="px-4 py-2 text-sm font-medium text-gray-700 hover:text-primary hover:bg-gray-50 rounded-lg transition-colors">
+          Το Γραφείο
+        </a>
+      </nav>
+
+      <!-- Contact Button Desktop -->
+      <a href={`tel:${settings?.phone || '2100000000'}`} class="hidden lg:inline-flex items-center gap-2 px-5 py-2.5 bg-primary text-white text-sm font-medium rounded-xl hover:bg-primary-light transition-colors shadow-sm">
+        <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z"/></svg>
+        {settings?.phone || '210 0000 000'}
+      </a>
+
+      <!-- Mobile menu button -->
+      <button id="mobile-menu-btn" class="lg:hidden p-2 rounded-lg text-gray-600 hover:text-primary hover:bg-gray-100 transition-colors" aria-label="Μενού">
+        <svg class="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path id="menu-icon-open" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"/>
+          <path id="menu-icon-close" class="hidden" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+        </svg>
+      </button>
+    </div>
+  </div>
+
+  <!-- Mobile Menu -->
+  <div id="mobile-menu" class="lg:hidden hidden max-h-0 overflow-hidden transition-all duration-300 border-t border-gray-100">
+    <div class="px-4 py-3 space-y-1">
+      <a href="/" class="block px-3 py-2.5 rounded-lg text-sm font-medium text-gray-700 hover:text-primary hover:bg-gray-50">
+        Αρχική
+      </a>
+      
+      <!-- Mobile Κατηγορίες Αγορά -->
+      <div class="border-t border-gray-50 pt-1">
+        <button class="mobile-submenu-btn w-full flex items-center justify-between px-3 py-2.5 rounded-lg text-sm font-medium text-gray-700 hover:text-primary hover:bg-gray-50" data-target="submenu-agora">
+          <span>Αγορά</span>
+          <svg class="w-4 h-4 transition-transform" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
+        </button>
+        <div id="submenu-agora" class="hidden pl-4 pb-2">
+          <a href="/agora" class="block px-3 py-2 text-sm text-gray-600 hover:text-primary rounded-lg">Όλες οι αγγελίες</a>
+          {agoraCategories.filter(c => !c.parent_id).map(cat => (
+            <a href={`/agora/${cat.slug}`} class="block px-3 py-2 text-sm text-gray-600 hover:text-primary rounded-lg">{cat.name_el}</a>
+          ))}
+        </div>
+      </div>
+
+      <!-- Mobile Κατηγορίες Ενοικίαση -->
+      <div class="border-t border-gray-50 pt-1">
+        <button class="mobile-submenu-btn w-full flex items-center justify-between px-3 py-2.5 rounded-lg text-sm font-medium text-gray-700 hover:text-primary hover:bg-gray-50" data-target="submenu-enoikiasi">
+          <span>Ενοικίαση</span>
+          <svg class="w-4 h-4 transition-transform" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
+        </button>
+        <div id="submenu-enoikiasi" class="hidden pl-4 pb-2">
+          <a href="/enoikiasi" class="block px-3 py-2 text-sm text-gray-600 hover:text-primary rounded-lg">Όλες οι αγγελίες</a>
+          {enoikiasiCategories.filter(c => !c.parent_id).map(cat => (
+            <a href={`/enoikiasi/${cat.slug}`} class="block px-3 py-2 text-sm text-gray-600 hover:text-primary rounded-lg">{cat.name_el}</a>
+          ))}
+        </div>
+      </div>
+
+      <a href="/poulithike" class="block px-3 py-2.5 rounded-lg text-sm font-medium text-gray-700 hover:text-primary hover:bg-gray-50 border-t border-gray-50">
+        Πουλήθηκε
+      </a>
+      <a href="/grafeio" class="block px-3 py-2.5 rounded-lg text-sm font-medium text-gray-700 hover:text-primary hover:bg-gray-50">
+        Το Γραφείο
+      </a>
+
+      <div class="border-t border-gray-100 pt-3 mt-2">
+        <a href={`tel:${settings?.phone || '2100000000'}`} class="flex items-center justify-center gap-2 px-4 py-3 bg-primary text-white text-sm font-medium rounded-xl hover:bg-primary-light transition-colors">
+          <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z"/></svg>
+          {settings?.phone || '210 0000 000'}
+        </a>
+      </div>
+    </div>
+  </div>
+</header>
+
+<script>
+  // Mobile menu toggle
+  const menuBtn = document.getElementById('mobile-menu-btn');
+  const mobileMenu = document.getElementById('mobile-menu');
+  const iconOpen = document.getElementById('menu-icon-open');
+  const iconClose = document.getElementById('menu-icon-close');
+
+  menuBtn.addEventListener('click', () => {
+    const isOpen = mobileMenu.classList.contains('max-h-[600px]');
+    if (isOpen) {
+      mobileMenu.classList.remove('max-h-[600px]', 'overflow-y-auto');
+      mobileMenu.classList.add('max-h-0');
+      iconOpen.classList.remove('hidden');
+      iconClose.classList.add('hidden');
+    } else {
+      mobileMenu.classList.remove('max-h-0');
+      mobileMenu.classList.add('max-h-[600px]', 'overflow-y-auto');
+      iconOpen.classList.add('hidden');
+      iconClose.classList.remove('hidden');
+    }
+  });
+
+  // Mobile submenu toggle
+  document.querySelectorAll('.mobile-submenu-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const target = document.getElementById(btn.dataset.target);
+      const arrow = btn.querySelector('svg');
+      const isOpen = !target.classList.contains('hidden');
+      target.classList.toggle('hidden');
+      arrow.classList.toggle('rotate-180');
+    });
+  });
+</script>

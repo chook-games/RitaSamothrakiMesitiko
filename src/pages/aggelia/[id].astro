@@ -1,0 +1,192 @@
+---
+import Layout from '../../layouts/Layout.astro'
+import { getListings, supabase, IS_PLACEHOLDER } from '../../lib/supabase'
+import type { Listing } from '../../lib/supabase'
+
+export async function getStaticPaths() {
+  if (IS_PLACEHOLDER) return []
+  const { data: listings } = await supabase
+    .from('listings')
+    .select('id')
+  if (!listings) return []
+  return listings.map(listing => ({
+    params: { id: listing.id },
+    props: { listingId: listing.id },
+  }))
+}
+
+const { listingId } = Astro.props
+
+if (IS_PLACEHOLDER) {
+  return Astro.redirect('/404')
+}
+
+const rawListing = await supabase
+  .from('listings')
+  .select(`
+    *,
+    category:categories(*),
+    images:listing_images(*)
+  `)
+  .eq('id', listingId)
+  .single()
+  .then(({ data }) => data as Listing | null)
+
+const listing = rawListing
+
+if (!listing) {
+  return Astro.redirect('/404')
+}
+
+const formattedPrice = new Intl.NumberFormat('el-GR', {
+  style: 'currency',
+  currency: 'EUR',
+  maximumFractionDigits: 0,
+}).format(listing.price)
+
+const images = listing.images?.sort((a, b) => a.order - b.order) || []
+const mainImage = images[0]?.url || null
+---
+
+<Layout title={`${listing.title} | Rita Samothraki`}>
+  <div class="bg-gray-50 min-h-screen">
+    <!-- Breadcrumb -->
+    <div class="bg-white border-b border-gray-200">
+      <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-3">
+        <div class="flex items-center gap-2 text-sm text-gray-400">
+          <a href="/" class="hover:text-primary">Αρχική</a>
+          <span>/</span>
+          {listing.category && (
+            <>
+              <a href={`/${listing.category.type === 'poulithike' ? 'poulithike' : listing.category.type}`} class="hover:text-primary">
+                {listing.category.type === 'agora' ? 'Αγορά' : listing.category.type === 'enoikiasi' ? 'Ενοικίαση' : 'Πουλήθηκε'}
+              </a>
+              <span>/</span>
+              <a href={`/${listing.category.type === 'poulithike' ? 'poulithike' : listing.category.type}/${listing.category.slug}`} class="hover:text-primary">
+                {listing.category.name_el}
+              </a>
+              <span>/</span>
+            </>
+          )}
+          <span class="text-gray-600 truncate">{listing.title}</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 md:py-10">
+      <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+        <!-- Left: Gallery & Description -->
+        <div class="lg:col-span-2 space-y-6">
+          <!-- Main Image -->
+          <div class="bg-white rounded-2xl overflow-hidden shadow-sm border border-gray-100">
+            {mainImage ? (
+              <div class="relative aspect-[16/9]">
+                <img src={mainImage} alt={listing.title} class="w-full h-full object-cover" />
+                {listing.status === 'sold' && (
+                  <div class="absolute inset-0 bg-black/40 flex items-center justify-center">
+                    <span class="px-6 py-3 bg-sold text-white text-lg font-bold rounded-xl shadow-lg rotate-[-15deg]">
+                      ΠΟΥΛΗΘΗΚΕ
+                    </span>
+                  </div>
+                )}
+              </div>
+            ) : (
+              <div class="aspect-[16/9] bg-gray-100 flex items-center justify-center">
+                <svg class="w-24 h-24 text-gray-300" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                </svg>
+              </div>
+            )}
+          </div>
+
+          <!-- Thumbnail Gallery -->
+          {images.length > 1 && (
+            <div class="grid grid-cols-4 gap-3">
+              {images.map(img => (
+                <div class="aspect-[4/3] rounded-xl overflow-hidden bg-white shadow-sm border border-gray-100">
+                  <img src={img.url} alt="" class="w-full h-full object-cover hover:scale-105 transition-transform duration-300 cursor-pointer" loading="lazy" />
+                </div>
+              ))}
+            </div>
+          )}
+
+          <!-- Description -->
+          <div class="bg-white rounded-2xl p-6 md:p-8 shadow-sm border border-gray-100">
+            <h2 class="text-xl font-bold text-gray-900 mb-4">Περιγραφή</h2>
+            <div class="prose prose-gray max-w-none">
+              {listing.description ? (
+                <p class="text-gray-600 leading-relaxed whitespace-pre-line">{listing.description}</p>
+              ) : (
+                <p class="text-gray-400 italic">Δεν υπάρχει διαθέσιμη περιγραφή.</p>
+              )}
+            </div>
+          </div>
+
+          <!-- YouTube Video -->
+          {listing.youtube_url && (
+            <div class="bg-white rounded-2xl p-6 md:p-8 shadow-sm border border-gray-100">
+              <h2 class="text-xl font-bold text-gray-900 mb-4">Βίντεο</h2>
+              <div class="aspect-video rounded-xl overflow-hidden">
+                <iframe
+                  src={listing.youtube_url.replace('watch?v=', 'embed/').replace('youtu.be/', 'youtube.com/embed/')}
+                  class="w-full h-full"
+                  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                  allowfullscreen
+                ></iframe>
+              </div>
+            </div>
+          )}
+        </div>
+
+        <!-- Right: Sidebar -->
+        <div class="space-y-6">
+          <!-- Listing Info Card -->
+          <div class="bg-white rounded-2xl p-6 md:p-8 shadow-sm border border-gray-100 sticky top-24">
+            <div class="flex items-center gap-2 mb-4">
+              {listing.code && (
+                <span class="text-sm text-gray-400 font-mono">Κωδικός: #{listing.code}</span>
+              )}
+              {listing.status === 'sold' && (
+                <span class="px-3 py-1 bg-sold/10 text-sold text-xs font-semibold rounded-full">Πουλήθηκε</span>
+              )}
+              {listing.is_featured && (
+                <span class="px-3 py-1 bg-accent/10 text-accent-dark text-xs font-semibold rounded-full">Προτεινόμενο</span>
+              )}
+            </div>
+
+            <h1 class="text-2xl font-bold text-gray-900 mb-4">{listing.title}</h1>
+
+            <div class="text-3xl font-extrabold text-primary mb-6">
+              {formattedPrice}
+            </div>
+
+            {listing.category && (
+              <div class="flex items-center gap-2 text-sm text-gray-500 mb-4">
+                <span class="px-3 py-1.5 bg-gray-100 rounded-lg">
+                  {listing.category.type === 'agora' ? 'Αγορά' : listing.category.type === 'enoikiasi' ? 'Ενοικίαση' : 'Πουλήθηκε'}
+                </span>
+                <span class="px-3 py-1.5 bg-gray-100 rounded-lg">
+                  {listing.category.name_el}
+                </span>
+              </div>
+            )}
+
+            <!-- Phone / Contact -->
+            <div class="border-t border-gray-100 pt-6 mt-6">
+              <p class="text-sm text-gray-500 mb-3">Επικοινωνήστε μαζί μας</p>
+              <a href={`tel:${listing.phone}`} class="flex items-center justify-center gap-2 w-full px-5 py-3.5 bg-primary text-white font-semibold rounded-xl hover:bg-primary-light transition-colors shadow-sm">
+                <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z"/></svg>
+                {listing.phone}
+              </a>
+            </div>
+
+            <!-- Created date -->
+            <p class="text-xs text-gray-400 mt-4 text-center">
+              Αναρτήθηκε: {new Date(listing.created_at).toLocaleDateString('el-GR', { year: 'numeric', month: 'long', day: 'numeric' })}
+            </p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</Layout>
