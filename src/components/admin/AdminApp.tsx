@@ -649,6 +649,7 @@ function CategoriesManager({ categories, onRefresh }: {
   const [newType, setNewType] = useState<'agora' | 'enoikiasi' | 'poulithike'>('agora')
   const [newSlug, setNewSlug] = useState('')
   const [editing, setEditing] = useState<Category | null>(null)
+  const [showModal, setShowModal] = useState(false)
 
   const generateSlug = (name: string) => name.toLowerCase().replace(/[^a-z0-9α-ωά-ώ]+/g, '-').replace(/^-|-$/g, '')
 
@@ -662,7 +663,7 @@ function CategoriesManager({ categories, onRefresh }: {
     if (error) setToast({ message: 'Σφάλμα: ' + error.message, type: 'error' })
     else {
       setToast({ message: 'Κατηγορία προστέθηκε!', type: 'success' })
-      setNewName(''); setNewSlug('')
+      setNewName(''); setNewSlug(''); setShowModal(false)
       onRefresh()
     }
   }
@@ -671,7 +672,7 @@ function CategoriesManager({ categories, onRefresh }: {
     if (!editing || !newName || !newSlug) return
     const { error } = await supabase.from('categories').update({ name_el: newName, slug: newSlug, type: newType }).eq('id', editing.id)
     if (error) setToast({ message: 'Σφάλμα: ' + error.message, type: 'error' })
-    else { setToast({ message: 'Κατηγορία ενημερώθηκε!', type: 'success' }); setEditing(null); setNewName(''); setNewSlug(''); onRefresh() }
+    else { setToast({ message: 'Κατηγορία ενημερώθηκε!', type: 'success' }); setEditing(null); setNewName(''); setNewSlug(''); setShowModal(false); onRefresh() }
   }
 
   const handleDelete = async (id: string) => {
@@ -686,6 +687,14 @@ function CategoriesManager({ categories, onRefresh }: {
     setNewName(cat.name_el)
     setNewSlug(cat.slug)
     setNewType(cat.type)
+    setShowModal(true)
+  }
+
+  const closeModal = () => {
+    setShowModal(false)
+    setEditing(null)
+    setNewName('')
+    setNewSlug('')
   }
 
   const typeLabels: Record<string, string> = { agora: 'Αγορά', enoikiasi: 'Ενοικίαση', poulithike: 'Πουλήθηκε' }
@@ -699,53 +708,86 @@ function CategoriesManager({ categories, onRefresh }: {
     <div className="p-6 md:p-8">
       {toast && <Toast message={toast.message} type={toast.type} onClose={() => setToast(null)} />}
 
-      <h1 className="text-2xl font-bold text-gray-900 mb-6">Διαχείριση Κατηγοριών</h1>
+      <div className="flex items-center justify-between mb-6">
+        <h1 className="text-2xl font-bold text-gray-900">Διαχείριση Κατηγοριών</h1>
+        <button
+          onClick={() => { setEditing(null); setNewName(''); setNewSlug(''); setNewType('agora'); setShowModal(true) }}
+          className="px-5 py-2.5 bg-primary text-white text-sm font-semibold rounded-xl hover:bg-primary-light transition-colors shadow-sm flex items-center gap-2"
+        >
+          <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4"/></svg>
+          Προσθήκη
+        </button>
+      </div>
 
-      {/* Add/Edit Form */}
-      <div className="bg-white rounded-2xl p-5 shadow-sm border border-gray-100 mb-6">
-        <h2 className="text-sm font-bold text-gray-900 mb-4">{editing ? 'Επεξεργασία Κατηγορίας' : 'Νέα Κατηγορία'}</h2>
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-3">
-          <input
-            type="text"
-            value={newName}
-            onChange={e => { setNewName(e.target.value); if (!editing) setNewSlug(generateSlug(e.target.value)) }}
-            className="px-4 py-2.5 rounded-xl border border-gray-300 focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none text-sm"
-            placeholder="Όνομα κατηγορίας"
-          />
-          <input
-            type="text"
-            value={newSlug}
-            onChange={e => setNewSlug(e.target.value)}
-            className="px-4 py-2.5 rounded-xl border border-gray-300 focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none text-sm"
-            placeholder="slug"
-          />
-          <select
-            value={newType}
-            onChange={e => setNewType(e.target.value as 'agora' | 'enoikiasi' | 'poulithike')}
-            className="px-4 py-2.5 rounded-xl border border-gray-300 focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none text-sm"
-          >
-            <option value="agora">Αγορά</option>
-            <option value="enoikiasi">Ενοικίαση</option>
-            <option value="poulithike">Πουλήθηκε</option>
-          </select>
-          <div className="flex gap-2">
-            <button
-              onClick={editing ? handleUpdate : handleAdd}
-              className="flex-1 px-4 py-2.5 bg-primary text-white text-sm font-semibold rounded-xl hover:bg-primary-light transition-colors"
-            >
-              {editing ? 'Ενημέρωση' : 'Προσθήκη'}
-            </button>
-            {editing && (
+      {/* Modal for add/edit */}
+      {showModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4" onClick={closeModal}>
+          <div className="bg-white rounded-2xl shadow-2xl p-6 w-full max-w-lg" onClick={e => e.stopPropagation()}>
+            <div className="flex items-center justify-between mb-5">
+              <h2 className="text-lg font-bold text-gray-900">
+                {editing ? 'Επεξεργασία Κατηγορίας' : 'Νέα Κατηγορία'}
+              </h2>
               <button
-                onClick={() => { setEditing(null); setNewName(''); setNewSlug('') }}
+                onClick={closeModal}
+                className="p-1.5 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg transition-colors"
+              >
+                <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12"/></svg>
+              </button>
+            </div>
+
+            <div className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Όνομα κατηγορίας</label>
+                <input
+                  type="text"
+                  value={newName}
+                  onChange={e => { setNewName(e.target.value); if (!editing) setNewSlug(generateSlug(e.target.value)) }}
+                  className="w-full px-4 py-2.5 rounded-xl border border-gray-300 focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none text-sm"
+                  placeholder="π.χ. Μονοκατοικία"
+                  autoFocus
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Slug</label>
+                <input
+                  type="text"
+                  value={newSlug}
+                  onChange={e => setNewSlug(e.target.value)}
+                  className="w-full px-4 py-2.5 rounded-xl border border-gray-300 focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none text-sm"
+                  placeholder="π.χ. monokatikia"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Τύπος</label>
+                <select
+                  value={newType}
+                  onChange={e => setNewType(e.target.value as 'agora' | 'enoikiasi' | 'poulithike')}
+                  className="w-full px-4 py-2.5 rounded-xl border border-gray-300 focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none text-sm"
+                >
+                  <option value="agora">Αγορά</option>
+                  <option value="enoikiasi">Ενοικίαση</option>
+                  <option value="poulithike">Πουλήθηκε</option>
+                </select>
+              </div>
+            </div>
+
+            <div className="flex gap-3 mt-6">
+              <button
+                onClick={editing ? handleUpdate : handleAdd}
+                className="flex-1 px-4 py-2.5 bg-primary text-white text-sm font-semibold rounded-xl hover:bg-primary-light transition-colors"
+              >
+                {editing ? 'Ενημέρωση' : 'Προσθήκη'}
+              </button>
+              <button
+                onClick={closeModal}
                 className="px-4 py-2.5 bg-gray-100 text-gray-700 text-sm font-medium rounded-xl hover:bg-gray-200 transition-colors"
               >
                 Ακύρωση
               </button>
-            )}
+            </div>
           </div>
         </div>
-      </div>
+      )}
 
       {/* Categories List */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
