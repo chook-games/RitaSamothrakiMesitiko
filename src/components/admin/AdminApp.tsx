@@ -1024,10 +1024,18 @@ export default function AdminApp() {
     <div className="min-h-screen bg-gray-50 flex">
       <Sidebar activeTab={activeTab} onTabChange={setActiveTab} onSignOut={signOut} />
       <main className="flex-1 overflow-y-auto">
-        {activeTab === 'dashboard' && <Dashboard listings={listings} categories={categories} />}
-        {activeTab === 'listings' && <ListingsManager listings={listings} categories={categories} phoneDefault={phoneDefault} onRefresh={loadData} />}
-        {activeTab === 'categories' && <CategoriesManager categories={categories} onRefresh={loadData} />}
-        {activeTab === 'settings' && <OfficeSettings settings={settings} onRefresh={loadData} />}
+        <div style={{ display: activeTab === 'dashboard' ? 'block' : 'none' }}>
+          <Dashboard listings={listings} categories={categories} />
+        </div>
+        <div style={{ display: activeTab === 'listings' ? 'block' : 'none' }}>
+          <ListingsManager listings={listings} categories={categories} phoneDefault={phoneDefault} onRefresh={loadData} />
+        </div>
+        <div style={{ display: activeTab === 'categories' ? 'block' : 'none' }}>
+          <CategoriesManager categories={categories} onRefresh={loadData} />
+        </div>
+        <div style={{ display: activeTab === 'settings' ? 'block' : 'none' }}>
+          <OfficeSettings settings={settings} onRefresh={loadData} />
+        </div>
       </main>
     </div>
   )
