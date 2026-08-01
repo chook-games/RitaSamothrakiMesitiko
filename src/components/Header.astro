@@ -16,14 +16,14 @@ const poulithikeCategories = categories.filter(c => c.type === 'poulithike')
       <!-- Logo -->
       <a href="/" class="flex items-center gap-3 group">
         {settings?.logo_url ? (
-          <img src={settings.logo_url} alt={settings.name} class="h-10 w-auto" />
+          <img id="header-logo" src={settings.logo_url} alt={settings.name} class="h-10 w-auto" />
         ) : (
-          <div class="w-10 h-10 bg-primary rounded-lg flex items-center justify-center text-white font-bold text-lg">
+          <div id="header-logo-fallback" class="w-10 h-10 bg-primary rounded-lg flex items-center justify-center text-white font-bold text-lg">
             RS
           </div>
         )}
         <div class="hidden sm:block">
-          <h1 class="text-lg font-bold text-primary leading-tight">{settings?.name || 'Rita Samothraki'}</h1>
+          <h1 id="header-office-name" class="text-lg font-bold text-primary leading-tight">{settings?.name || 'Rita Samothraki'}</h1>
           <p class="text-xs text-gray-500">Μεσιτικό Γραφείο</p>
         </div>
       </a>
@@ -86,9 +86,9 @@ const poulithikeCategories = categories.filter(c => c.type === 'poulithike')
       </nav>
 
       <!-- Contact Button Desktop -->
-      <a href={`tel:${settings?.phone || '2100000000'}`} class="hidden lg:inline-flex items-center gap-2 px-5 py-2.5 bg-primary text-white text-sm font-medium rounded-xl hover:bg-primary-light transition-colors shadow-sm">
+      <a id="header-phone-link" href={`tel:${settings?.phone || '2100000000'}`} class="hidden lg:inline-flex items-center gap-2 px-5 py-2.5 bg-primary text-white text-sm font-medium rounded-xl hover:bg-primary-light transition-colors shadow-sm">
         <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z"/></svg>
-        {settings?.phone || '210 0000 000'}
+        <span id="header-phone-text">{settings?.phone || '210 0000 000'}</span>
       </a>
 
       <!-- Mobile menu button -->
@@ -144,9 +144,9 @@ const poulithikeCategories = categories.filter(c => c.type === 'poulithike')
       </a>
 
       <div class="border-t border-gray-100 pt-3 mt-2">
-        <a href={`tel:${settings?.phone || '2100000000'}`} class="flex items-center justify-center gap-2 px-4 py-3 bg-primary text-white text-sm font-medium rounded-xl hover:bg-primary-light transition-colors">
+        <a id="mobile-phone-link" href={`tel:${settings?.phone || '2100000000'}`} class="flex items-center justify-center gap-2 px-4 py-3 bg-primary text-white text-sm font-medium rounded-xl hover:bg-primary-light transition-colors">
           <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z"/></svg>
-          {settings?.phone || '210 0000 000'}
+          <span id="mobile-phone-text">{settings?.phone || '210 0000 000'}</span>
         </a>
       </div>
     </div>
@@ -185,4 +185,44 @@ const poulithikeCategories = categories.filter(c => c.type === 'poulithike')
       arrow.classList.toggle('rotate-180');
     });
   });
+
+  // Live office settings — fetch latest from Supabase so admin changes appear without redeploy
+  (async () => {
+    try {
+      const SUPABASE_URL = import.meta.env.PUBLIC_SUPABASE_URL;
+      const SUPABASE_ANON_KEY = import.meta.env.PUBLIC_SUPABASE_ANON_KEY;
+      if (!SUPABASE_URL || !SUPABASE_ANON_KEY || SUPABASE_URL.includes('placeholder')) return;
+
+      const res = await fetch(`${SUPABASE_URL}/rest/v1/office_settings?select=*&limit=1`, {
+        headers: { apikey: SUPABASE_ANON_KEY, Authorization: `Bearer ${SUPABASE_ANON_KEY}` }
+      });
+      if (!res.ok) return;
+      const rows = await res.json();
+      if (!rows || rows.length === 0) return;
+      const s = rows[0];
+
+      if (s.logo_url) {
+        const logo = document.getElementById('header-logo');
+        const fb = document.getElementById('header-logo-fallback');
+        if (logo) { logo.src = s.logo_url; logo.classList.remove('hidden'); }
+        if (fb) fb.classList.add('hidden');
+      }
+      if (s.name) {
+        const nameEl = document.getElementById('header-office-name');
+        if (nameEl) nameEl.textContent = s.name;
+      }
+      if (s.phone) {
+        const pt = document.getElementById('header-phone-text');
+        const mpt = document.getElementById('mobile-phone-text');
+        const pl = document.getElementById('header-phone-link');
+        const mpl = document.getElementById('mobile-phone-link');
+        if (pt) pt.textContent = s.phone;
+        if (mpt) mpt.textContent = s.phone;
+        if (pl) pl.href = `tel:${s.phone}`;
+        if (mpl) mpl.href = `tel:${s.phone}`;
+      }
+    } catch (e) {
+      // silent fail — SSR values remain
+    }
+  })();
 </script>

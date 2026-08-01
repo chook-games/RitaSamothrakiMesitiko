@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react'
+import React, { useState, useEffect, useRef } from 'react'
 import { supabase } from '../../lib/supabase'
 import type { Listing, Category, OfficeSettings } from '../../lib/supabase'
 
@@ -13,7 +13,8 @@ function useAuth() {
       setUser(session?.user ?? null)
       setLoading(false)
     })
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+      console.log('[Auth] onAuthStateChange event:', event, 'user:', session?.user?.email)
       setUser(session?.user ?? null)
     })
     return () => subscription.unsubscribe()
@@ -812,14 +813,18 @@ function OfficeSettings({ settings: initialSettings, onRefresh }: {
         youtube: youtube || null,
       },
     }
+    console.log('[OfficeSettings] Saving data:', data)
+    console.log('[OfficeSettings] initialSettings id:', initialSettings?.id)
 
     if (initialSettings) {
-      const { error } = await supabase.from('office_settings').update(data).eq('id', initialSettings.id)
-      if (error) setToast({ message: 'Σφάλμα: ' + error.message, type: 'error' })
+      const result = await supabase.from('office_settings').update(data).eq('id', initialSettings.id)
+      console.log('[OfficeSettings] UPDATE result:', result)
+      if (result.error) setToast({ message: 'Σφάλμα: ' + result.error.message, type: 'error' })
       else { setToast({ message: 'Οι ρυθμίσεις αποθηκεύτηκαν!', type: 'success' }); onRefresh() }
     } else {
-      const { error } = await supabase.from('office_settings').insert(data)
-      if (error) setToast({ message: 'Σφάλμα: ' + error.message, type: 'error' })
+      const result = await supabase.from('office_settings').insert(data)
+      console.log('[OfficeSettings] INSERT result:', result)
+      if (result.error) setToast({ message: 'Σφάλμα: ' + result.error.message, type: 'error' })
       else { setToast({ message: 'Οι ρυθμίσεις αποθηκεύτηκαν!', type: 'success' }); onRefresh() }
     }
   }
@@ -979,9 +984,14 @@ export default function AdminApp() {
   const [categories, setCategories] = useState<Category[]>([])
   const [settings, setSettings] = useState<OfficeSettings | null>(null)
   const [dataLoading, setDataLoading] = useState(true)
+  const [isRefreshing, setIsRefreshing] = useState(false)
+  const hasLoadedRef = useRef(false)
 
-  const loadData = async () => {
-    setDataLoading(true)
+  const loadData = async (silent = false) => {
+    console.trace('[AdminApp] loadData called, silent:', silent)
+    if (!silent) setDataLoading(true)
+    else setIsRefreshing(true)
+    
     const [listingsRes, categoriesRes, settingsRes] = await Promise.all([
       supabase.from('listings').select('*, category:categories(*), images:listing_images(*)').order('created_at', { ascending: false }),
       supabase.from('categories').select('*').order('name_el'),
@@ -990,10 +1000,18 @@ export default function AdminApp() {
     if (listingsRes.data) setListings(listingsRes.data as Listing[])
     if (categoriesRes.data) setCategories(categoriesRes.data)
     if (settingsRes.data) setSettings(settingsRes.data)
-    setDataLoading(false)
+    
+    if (!silent) setDataLoading(false)
+    else setIsRefreshing(false)
   }
 
-  useEffect(() => { if (user) loadData() }, [user])
+  // Initial load only when user first becomes available (not on every auth event like TOKEN_REFRESHED)
+  useEffect(() => {
+    if (user && !hasLoadedRef.current) {
+      hasLoadedRef.current = true
+      loadData()
+    }
+  }, [user])
 
   if (loading) {
     return (
@@ -1022,19 +1040,24 @@ export default function AdminApp() {
 
   return (
     <div className="min-h-screen bg-gray-50 flex">
+      {isRefreshing && (
+        <div className="fixed top-4 right-4 z-50 px-3 py-1.5 bg-white shadow-lg rounded-full text-xs text-gray-500 border border-gray-200 animate-pulse">
+          Ανανέωση...
+        </div>
+      )}
       <Sidebar activeTab={activeTab} onTabChange={setActiveTab} onSignOut={signOut} />
       <main className="flex-1 overflow-y-auto">
         <div style={{ display: activeTab === 'dashboard' ? 'block' : 'none' }}>
           <Dashboard listings={listings} categories={categories} />
         </div>
         <div style={{ display: activeTab === 'listings' ? 'block' : 'none' }}>
-          <ListingsManager listings={listings} categories={categories} phoneDefault={phoneDefault} onRefresh={loadData} />
+          <ListingsManager listings={listings} categories={categories} phoneDefault={phoneDefault} onRefresh={() => loadData(true)} />
         </div>
         <div style={{ display: activeTab === 'categories' ? 'block' : 'none' }}>
-          <CategoriesManager categories={categories} onRefresh={loadData} />
+          <CategoriesManager categories={categories} onRefresh={() => loadData(true)} />
         </div>
         <div style={{ display: activeTab === 'settings' ? 'block' : 'none' }}>
-          <OfficeSettings settings={settings} onRefresh={loadData} />
+          <OfficeSettings settings={settings} onRefresh={() => loadData(true)} />
         </div>
       </main>
     </div>
