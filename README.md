@@ -1,46 +1,80 @@
-# Astro Starter Kit: Basics
+# Rita Samothraki - Μεσιτικό Γραφείο
 
-```sh
-npm create astro@latest -- --template basics
+Σύγχρονη ιστοσελίδα για μεσιτικό γραφείο, χτισμένη με **Astro + React + Tailwind CSS** και **Supabase** (database, auth, storage).
+
+## 🌐 Live
+
+- **Site:** https://chook-games.github.io/RitaSamothrakiMesitiko/
+- **Admin Panel:** https://chook-games.github.io/RitaSamothrakiMesitiko/admin/
+
+## 🏗️ Τεχνολογίες
+
+| Επίπεδο | Τεχνολογία |
+|---------|-----------|
+| Static Site | Astro 5 (SSG) |
+| UI Framework | React 19 |
+| Styling | Tailwind CSS 4 |
+| Database & Auth | Supabase (PostgreSQL) |
+| Storage | Supabase Storage |
+| Deployment | GitHub Actions → GitHub Pages |
+
+## 📋 Λειτουργίες
+
+### Δημόσιο Site
+- **Αρχική**: Hero section, Προτεινόμενες αγγελίες, Κατηγορίες, Πρόσφατες αγγελίες
+- **Αγορά / Ενοικίαση / Πουλήθηκε**: Σελίδες με υποκατηγορίες και φίλτρα
+- **Λεπτομέρεια αγγελίας**: Photo gallery, περιγραφή, τιμή, ενσωματωμένο YouTube video, τηλέφωνο
+- **Το Γραφείο**: Πληροφορίες, λογότυπο, χάρτης, social links
+- **Πλήρως responsive**: Mobile-first, hamburger menu, dropdowns
+
+### Admin Panel (`/admin`)
+- **Login** με email/password (Supabase Auth)
+- **Dashboard**: Στατιστικά, πρόσφατες αγγελίες
+- **Αγγελίες**: CRUD, upload φωτογραφιών (drag & drop), YouTube URL, "Προτεινόμενο" toggle, "Πουλήθηκε" status
+- **Κατηγορίες**: Add/edit/delete (Αγορά, Ενοικίαση, Πουλήθηκε)
+- **Ρυθμίσεις Γραφείου**: Όνομα, λογότυπο, τηλέφωνο, email, social links
+
+## 🔐 Admin Login
+
+- **Email:** `g.tsouhnikas@gmail.com`
+- **Password:** (ορίστηκε κατά τη δημιουργία — Supabase Auth)
+
+## 🗄️ Database Schema
+
+Tables: `office_settings`, `categories`, `listings`, `listing_images`
+- **RLS**: Public = SELECT μόνο, Authenticated (admin) = full CRUD
+- **Storage buckets**: `listings` (φωτογραφίες αγγελιών), `office` (λογότυπο)
+- Migration: `supabase/migration.sql`
+
+## 💻 Τοπική Ανάπτυξη
+
+```bash
+# 1. Εγκατάσταση dependencies
+npm install
+
+# 2. Δημιουργία .env (βλέπε .env.example)
+PUBLIC_SUPABASE_URL=https://obshrelxpvqszxzqdvcn.supabase.co
+PUBLIC_SUPABASE_ANON_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
+
+# 3. Dev server
+npm run dev
+
+# 4. Build
+npm run build
 ```
 
-> 🧑‍🚀 **Seasoned astronaut?** Delete this file. Have fun!
+## 🚀 Deployment
 
-## 🚀 Project Structure
+Κάθε push στο `master` κάνει αυτόματα build & deploy μέσω GitHub Actions (`.github/workflows/deploy.yml`).
 
-Inside of your Astro project, you'll see the following folders and files:
+Secrets που χρειάζονται στο repo:
+- `PUBLIC_SUPABASE_URL`
+- `PUBLIC_SUPABASE_ANON_KEY`
 
-```text
-/
-├── public/
-│   └── favicon.svg
-├── src
-│   ├── assets
-│   │   └── astro.svg
-│   ├── components
-│   │   └── Welcome.astro
-│   ├── layouts
-│   │   └── Layout.astro
-│   └── pages
-│       └── index.astro
-└── package.json
-```
+## 🎯 Μελλοντικές Βελτιώσεις
 
-To learn more about the folder structure of an Astro project, refer to [our guide on project structure](https://docs.astro.build/en/basics/project-structure/).
-
-## 🧞 Commands
-
-All commands are run from the root of the project, from a terminal:
-
-| Command                   | Action                                           |
-| :------------------------ | :----------------------------------------------- |
-| `npm install`             | Installs dependencies                            |
-| `npm run dev`             | Starts local dev server at `localhost:4321`      |
-| `npm run build`           | Build your production site to `./dist/`          |
-| `npm run preview`         | Preview your build locally, before deploying     |
-| `npm run astro ...`       | Run CLI commands like `astro add`, `astro check` |
-| `npm run astro -- --help` | Get help using the Astro CLI                     |
-
-## 👀 Want to learn more?
-
-Feel free to check [our documentation](https://docs.astro.build) or jump into our [Discord server](https://astro.build/chat).
+- SEO optimization (meta tags, sitemap, robots.txt)
+- Μετάβαση σε Vercel/Netlify για SSR & καλύτερο SEO
+- Contact form
+- Property alerts
+- Custom domain
