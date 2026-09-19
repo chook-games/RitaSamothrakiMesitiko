@@ -1,0 +1,144 @@
+---
+import { t, localizePath, withBase, type Lang } from '../i18n/utils'
+
+export interface Props {
+  lang?: Lang
+  officeName?: string
+}
+
+const lang: Lang = Astro.props.lang ?? 'el'
+const officeName = Astro.props.officeName ?? 'Rita Samothraki'
+
+const slideCount = 16
+const slides = Array.from({ length: slideCount }, (_, i) => withBase(`/gallery/slide-${String(i + 1).padStart(2, '0')}.jpg`))
+---
+
+<section id="hero-slider" class="relative min-h-[88vh] md:min-h-[92vh] overflow-hidden bg-primary-dark">
+  <!-- Slides -->
+  <div class="absolute inset-0">
+    {slides.map((src, i) => (
+      <div class={`hero-slide absolute inset-0 ${i === 0 ? 'is-active' : ''}`} data-hero-slide>
+        <img
+          src={src}
+          alt=""
+          class="w-full h-full object-cover"
+          loading={i === 0 ? 'eager' : 'lazy'}
+          fetchpriority={i === 0 ? 'high' : 'low'}
+          decoding="async"
+        />
+      </div>
+    ))}
+  </div>
+
+  <!-- Overlay -->
+  <div class="absolute inset-0 bg-gradient-to-b from-primary-dark/80 via-primary-dark/60 to-primary-dark/85"></div>
+  <div class="absolute inset-0 bg-gradient-to-r from-primary-dark/70 via-transparent to-transparent"></div>
+
+  <!-- Content -->
+  <div class="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 min-h-[88vh] md:min-h-[92vh] flex items-center">
+    <div class="max-w-3xl py-24">
+      <div class="hero-fade-up inline-flex items-center gap-2 px-4 py-2 bg-white/10 backdrop-blur-sm rounded-full text-sm text-white/90 mb-6 border border-white/15">
+        <span class="w-2 h-2 bg-accent rounded-full animate-pulse"></span>
+        {officeName} — {t(lang, 'home.heroBadge')}
+      </div>
+      <h1 class="hero-fade-up text-4xl md:text-5xl lg:text-6xl font-extrabold leading-[1.05] mb-6 text-white drop-shadow-sm" style="animation-delay: .08s">
+        {t(lang, 'home.heroTitle1')} <span class="text-accent">{t(lang, 'home.heroTitleAccent')}</span> {t(lang, 'home.heroTitle2')}
+      </h1>
+      <p class="hero-fade-up text-lg md:text-xl text-white/85 leading-relaxed mb-9 max-w-2xl" style="animation-delay: .16s">
+        {t(lang, 'home.heroSubtitle')}
+      </p>
+      <div class="hero-fade-up flex flex-wrap gap-3" style="animation-delay: .24s">
+        <a href={localizePath('/agora', lang)} class="inline-flex items-center gap-2 px-6 py-3.5 bg-accent text-primary-dark font-semibold rounded-xl hover:bg-accent-light transition-colors shadow-lg shadow-accent/25">
+          {t(lang, 'home.ctaBuy')}
+          <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 8l4 4m0 0l-4 4m4-4H3"/></svg>
+        </a>
+        <a href={localizePath('/enoikiasi', lang)} class="inline-flex items-center gap-2 px-6 py-3.5 bg-white/10 backdrop-blur-sm text-white font-semibold rounded-xl hover:bg-white/20 transition-colors border border-white/25">
+          {t(lang, 'home.ctaRent')}
+          <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4"/></svg>
+        </a>
+      </div>
+    </div>
+  </div>
+
+  <!-- Arrows -->
+  <button data-hero-prev class="hero-fade-up hidden md:flex absolute left-4 lg:left-8 top-1/2 -translate-y-1/2 z-20 w-11 h-11 items-center justify-center rounded-full bg-white/10 hover:bg-white/25 backdrop-blur-sm border border-white/20 text-white transition-colors" aria-label="Previous slide">
+    <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/></svg>
+  </button>
+  <button data-hero-next class="hero-fade-up hidden md:flex absolute right-4 lg:right-8 top-1/2 -translate-y-1/2 z-20 w-11 h-11 items-center justify-center rounded-full bg-white/10 hover:bg-white/25 backdrop-blur-sm border border-white/20 text-white transition-colors" aria-label="Next slide">
+    <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg>
+  </button>
+
+  <!-- Dots -->
+  <div class="absolute bottom-8 left-1/2 -translate-x-1/2 z-20 flex items-center gap-2.5" data-hero-dots>
+    {slides.map((_, i) => (
+      <button
+        data-hero-dot
+        data-index={i}
+        aria-label={`Slide ${i + 1}`}
+        class={`h-2 rounded-full transition-all duration-300 ${i === 0 ? 'w-7 bg-accent' : 'w-2 bg-white/40 hover:bg-white/70'}`}
+      ></button>
+    ))}
+  </div>
+
+  <!-- Bottom fade into page -->
+  <div class="absolute bottom-0 left-0 right-0 h-24 bg-gradient-to-t from-white to-transparent pointer-events-none"></div>
+</section>
+
+<script>
+  (() => {
+    const root = document.getElementById('hero-slider');
+    if (!root) return;
+
+    const slides = Array.from(root.querySelectorAll('[data-hero-slide]'));
+    const dots = Array.from(root.querySelectorAll('[data-hero-dot]'));
+    if (slides.length === 0) return;
+
+    let index = 0;
+    let timer: number | undefined;
+    const DURATION = 6000;
+
+    const render = () => {
+      slides.forEach((slide, i) => slide.classList.toggle('is-active', i === index));
+      dots.forEach((dot, i) => {
+        const active = i === index;
+        dot.classList.toggle('w-7', active);
+        dot.classList.toggle('bg-accent', active);
+        dot.classList.toggle('w-2', !active);
+        dot.classList.toggle('bg-white/40', !active);
+        dot.classList.toggle('hover:bg-white/70', !active);
+      });
+    };
+
+    const goTo = (next: number) => {
+      index = (next + slides.length) % slides.length;
+      render();
+    };
+
+    const stop = () => { if (timer) window.clearInterval(timer); timer = undefined; };
+    const start = () => { stop(); timer = window.setInterval(() => goTo(index + 1), DURATION); };
+
+    root.querySelector('[data-hero-next]')?.addEventListener('click', () => { goTo(index + 1); start(); });
+    root.querySelector('[data-hero-prev]')?.addEventListener('click', () => { goTo(index - 1); start(); });
+    dots.forEach(dot => dot.addEventListener('click', () => { goTo(Number(dot.dataset.index)); start(); }));
+
+    root.addEventListener('mouseenter', stop);
+    root.addEventListener('mouseleave', start);
+
+    // Swipe support
+    let touchX = 0;
+    root.addEventListener('touchstart', (e) => { touchX = e.touches[0].clientX; stop(); }, { passive: true });
+    root.addEventListener('touchend', (e) => {
+      const dx = e.changedTouches[0].clientX - touchX;
+      if (Math.abs(dx) > 40) goTo(index + (dx < 0 ? 1 : -1));
+      start();
+    }, { passive: true });
+
+    document.addEventListener('visibilitychange', () => {
+      if (document.hidden) stop();
+      else start();
+    });
+
+    render();
+    start();
+  })();
+</script>

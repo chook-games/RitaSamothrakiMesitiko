@@ -1,6 +1,6 @@
 ---
-import ListPage from '../../components/pages/ListPage.astro'
-import { getCategories } from '../../lib/supabase'
+import ListPage from '../../../components/pages/ListPage.astro'
+import { getCategories } from '../../../lib/supabase'
 
 export async function getStaticPaths() {
   const categories = await getCategories('poulithike')
@@ -13,4 +13,4 @@ export async function getStaticPaths() {
 const { category } = Astro.props
 ---
 
-<ListPage type="poulithike" category={category} lang="el" />
+<ListPage type="poulithike" category={category} lang="en" />

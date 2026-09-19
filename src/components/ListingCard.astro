@@ -1,28 +1,35 @@
 ---
 import type { Listing } from '../lib/supabase'
+import { t, localizePath, pick, type Lang } from '../i18n/utils'
 
 export interface Props {
   listing: Listing
+  lang?: Lang
 }
 
 const { listing } = Astro.props
+const lang: Lang = Astro.props.lang ?? 'el'
+
 const mainImage = listing.images && listing.images.length > 0
   ? listing.images.sort((a, b) => a.order - b.order)[0].url
   : null
-const formattedPrice = new Intl.NumberFormat('el-GR', {
+const formattedPrice = new Intl.NumberFormat(lang === 'en' ? 'en-GB' : 'el-GR', {
   style: 'currency',
   currency: 'EUR',
   maximumFractionDigits: 0,
 }).format(listing.price)
+
+const title = pick(lang, listing.title, listing.title_en)
+const categoryName = listing.category ? pick(lang, listing.category.name_el, listing.category.name_en) : ''
 ---
 
-<a href={`/aggelia/${listing.id}`} class="group block bg-white rounded-2xl overflow-hidden shadow-sm hover:shadow-xl transition-all duration-300 border border-gray-100">
+<a href={localizePath(`/aggelia/${listing.id}`, lang)} class="group block bg-white rounded-2xl overflow-hidden shadow-sm hover:shadow-xl transition-all duration-300 border border-gray-100">
   <!-- Image -->
   <div class="relative aspect-[4/3] overflow-hidden bg-gray-100">
     {mainImage ? (
       <img
         src={mainImage}
-        alt={listing.title}
+        alt={title}
         class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
         loading="lazy"
       />
@@ -33,17 +40,17 @@ const formattedPrice = new Intl.NumberFormat('el-GR', {
         </svg>
       </div>
     )}
-    
+
     <!-- Badges -->
     <div class="absolute top-3 left-3 flex flex-col gap-2">
       {listing.status === 'sold' && (
         <span class="px-3 py-1 bg-sold text-white text-xs font-semibold rounded-full shadow-sm">
-          Πουλήθηκε
+          {t(lang, 'card.sold')}
         </span>
       )}
       {listing.is_featured && (
         <span class="px-3 py-1 bg-accent text-primary-dark text-xs font-semibold rounded-full shadow-sm">
-          Προτεινόμενο
+          {t(lang, 'card.featured')}
         </span>
       )}
     </div>
@@ -62,16 +69,16 @@ const formattedPrice = new Intl.NumberFormat('el-GR', {
       {listing.code && (
         <span class="text-xs text-gray-400 font-mono">#{listing.code}</span>
       )}
-      {listing.category && (
+      {categoryName && (
         <span class="text-xs text-primary-light bg-primary/5 px-2 py-0.5 rounded-full">
-          {listing.category.name_el}
+          {categoryName}
         </span>
       )}
     </div>
     <h3 class="text-sm font-semibold text-gray-900 line-clamp-2 group-hover:text-primary transition-colors leading-snug mb-3">
-      {listing.title}
+      {title}
     </h3>
-    
+
     <div class="flex items-center justify-between">
       <span class="text-base font-bold text-primary">
         {formattedPrice}

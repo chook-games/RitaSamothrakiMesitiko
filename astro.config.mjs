@@ -5,8 +5,15 @@ import tailwindcss from '@tailwindcss/vite';
 
 // https://astro.build/config
 export default defineConfig({
-  site: 'https://YOUR_GITHUB_USERNAME.github.io',
+  site: 'https://chook-games.github.io',
   base: '/RitaSamothrakiMesitiko',
+  i18n: {
+    defaultLocale: 'el',
+    locales: ['el', 'en'],
+    routing: {
+      prefixDefaultLocale: false,
+    },
+  },
   integrations: [react()],
   vite: {
     plugins: [tailwindcss()]

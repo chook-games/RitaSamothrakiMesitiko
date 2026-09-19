@@ -1,6 +1,8 @@
 import React, { useState, useEffect, useRef } from 'react'
 import { supabase } from '../../lib/supabase'
 import type { Listing, Category, OfficeSettings } from '../../lib/supabase'
+import { translateTexts } from '../../lib/translate'
+import BulkImport from './BulkImport'
 
 // ============= AUTH HOOK =============
 function useAuth() {
@@ -117,6 +119,7 @@ function Sidebar({ activeTab, onTabChange, onSignOut }: {
   const tabs = [
     { id: 'dashboard', label: 'Πίνακας Ελέγχου', icon: 'M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6' },
     { id: 'listings', label: 'Αγγελίες', icon: 'M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10' },
+    { id: 'import', label: 'Μαζική Εισαγωγή', icon: 'M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12' },
     { id: 'categories', label: 'Κατηγορίες', icon: 'M19 9l-10 10M9 19l-5-5m14-5l-5-5M9 5l-5 5' },
     { id: 'settings', label: 'Ρυθμίσεις Γραφείου', icon: 'M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.066 2.573c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.573 1.066c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.066-2.573c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z M15 12a3 3 0 11-6 0 3 3 0 016 0z' },
   ]
@@ -395,7 +398,9 @@ function ListingForm({ listing, categories, phoneDefault, onSave, onCancel }: {
 }) {
   const [code, setCode] = useState(listing?.code || '')
   const [title, setTitle] = useState(listing?.title || '')
+  const [titleEn, setTitleEn] = useState(listing?.title_en || '')
   const [description, setDescription] = useState(listing?.description || '')
+  const [descriptionEn, setDescriptionEn] = useState(listing?.description_en || '')
   const [price, setPrice] = useState(listing?.price?.toString() || '')
   const [categoryId, setCategoryId] = useState(listing?.category_id || '')
   const [phone, setPhone] = useState(listing?.phone || phoneDefault)
@@ -403,6 +408,7 @@ function ListingForm({ listing, categories, phoneDefault, onSave, onCancel }: {
   const [isFeatured, setIsFeatured] = useState(listing?.is_featured || false)
   const [status, setStatus] = useState(listing?.status || 'active')
   const [uploading, setUploading] = useState(false)
+  const [translating, setTranslating] = useState(false)
 
   // Available types
   const types = ['agora', 'enoikiasi', 'poulithike'] as const
@@ -416,7 +422,9 @@ function ListingForm({ listing, categories, phoneDefault, onSave, onCancel }: {
     const listingData = {
       code,
       title,
+      title_en: titleEn || null,
       description,
+      description_en: descriptionEn || null,
       price: parseFloat(price),
       category_id: categoryId,
       phone,
@@ -464,6 +472,19 @@ function ListingForm({ listing, categories, phoneDefault, onSave, onCancel }: {
     const { error } = await supabase.from('listing_images').delete().eq('id', imageId)
     if (error) alert('Σφάλμα: ' + error.message)
     else onSave()
+  }
+
+  const handleAutoTranslate = async () => {
+    setTranslating(true)
+    try {
+      const [translatedTitle, translatedDescription] = await translateTexts([title, description], 'en', 'el')
+      if (translatedTitle) setTitleEn(translatedTitle)
+      if (translatedDescription) setDescriptionEn(translatedDescription)
+    } catch (e) {
+      alert('Η μετάφραση απέτυχε: ' + (e instanceof Error ? e.message : e))
+    } finally {
+      setTranslating(false)
+    }
   }
 
   return (
@@ -528,6 +549,44 @@ function ListingForm({ listing, categories, phoneDefault, onSave, onCancel }: {
             className="w-full px-4 py-2.5 rounded-xl border border-gray-300 focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none text-sm resize-y"
             placeholder="Περιγράψτε το ακίνητο..."
           />
+        </div>
+
+        {/* English fields */}
+        <div className="rounded-2xl border border-gray-100 bg-gray-50/60 p-4 space-y-4">
+          <div className="flex items-center justify-between flex-wrap gap-2">
+            <div>
+              <div className="text-sm font-semibold text-gray-900">Αγγλικά (προαιρετικά)</div>
+              <div className="text-xs text-gray-500">Αν μείνουν κενά, η αγγελία θα εμφανίζει τα ελληνικά.</div>
+            </div>
+            <button
+              type="button"
+              onClick={handleAutoTranslate}
+              disabled={translating || (!title && !description)}
+              className="inline-flex items-center gap-2 px-4 py-2 bg-primary text-white text-sm font-medium rounded-xl hover:bg-primary-light transition-colors disabled:opacity-50"
+            >
+              {translating ? 'Μετάφραση...' : '✨ Αυτόματη Μετάφραση'}
+            </button>
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">English Title</label>
+            <input
+              type="text"
+              value={titleEn}
+              onChange={e => setTitleEn(e.target.value)}
+              className="w-full px-4 py-2.5 rounded-xl border border-gray-300 focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none text-sm bg-white"
+              placeholder="Property title in English"
+            />
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">English Description</label>
+            <textarea
+              value={descriptionEn}
+              onChange={e => setDescriptionEn(e.target.value)}
+              rows={4}
+              className="w-full px-4 py-2.5 rounded-xl border border-gray-300 focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none text-sm resize-y bg-white"
+              placeholder="Property description in English"
+            />
+          </div>
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -646,6 +705,7 @@ function CategoriesManager({ categories, onRefresh }: {
 }) {
   const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' } | null>(null)
   const [newName, setNewName] = useState('')
+  const [newNameEn, setNewNameEn] = useState('')
   const [newType, setNewType] = useState<'agora' | 'enoikiasi' | 'poulithike'>('agora')
   const [newSlug, setNewSlug] = useState('')
   const [editing, setEditing] = useState<Category | null>(null)
@@ -657,22 +717,23 @@ function CategoriesManager({ categories, onRefresh }: {
     if (!newName || !newSlug) return
     const { error } = await supabase.from('categories').insert({
       name_el: newName,
+      name_en: newNameEn || null,
       slug: newSlug,
       type: newType,
     })
     if (error) setToast({ message: 'Σφάλμα: ' + error.message, type: 'error' })
     else {
       setToast({ message: 'Κατηγορία προστέθηκε!', type: 'success' })
-      setNewName(''); setNewSlug(''); setShowModal(false)
+      setNewName(''); setNewNameEn(''); setNewSlug(''); setShowModal(false)
       onRefresh()
     }
   }
 
   const handleUpdate = async () => {
     if (!editing || !newName || !newSlug) return
-    const { error } = await supabase.from('categories').update({ name_el: newName, slug: newSlug, type: newType }).eq('id', editing.id)
+    const { error } = await supabase.from('categories').update({ name_el: newName, name_en: newNameEn || null, slug: newSlug, type: newType }).eq('id', editing.id)
     if (error) setToast({ message: 'Σφάλμα: ' + error.message, type: 'error' })
-    else { setToast({ message: 'Κατηγορία ενημερώθηκε!', type: 'success' }); setEditing(null); setNewName(''); setNewSlug(''); setShowModal(false); onRefresh() }
+    else { setToast({ message: 'Κατηγορία ενημερώθηκε!', type: 'success' }); setEditing(null); setNewName(''); setNewNameEn(''); setNewSlug(''); setShowModal(false); onRefresh() }
   }
 
   const handleDelete = async (id: string) => {
@@ -685,6 +746,7 @@ function CategoriesManager({ categories, onRefresh }: {
   const startEdit = (cat: Category) => {
     setEditing(cat)
     setNewName(cat.name_el)
+    setNewNameEn(cat.name_en || '')
     setNewSlug(cat.slug)
     setNewType(cat.type)
     setShowModal(true)
@@ -694,6 +756,7 @@ function CategoriesManager({ categories, onRefresh }: {
     setShowModal(false)
     setEditing(null)
     setNewName('')
+    setNewNameEn('')
     setNewSlug('')
   }
 
@@ -711,7 +774,7 @@ function CategoriesManager({ categories, onRefresh }: {
       <div className="flex items-center justify-between mb-6">
         <h1 className="text-2xl font-bold text-gray-900">Διαχείριση Κατηγοριών</h1>
         <button
-          onClick={() => { setEditing(null); setNewName(''); setNewSlug(''); setNewType('agora'); setShowModal(true) }}
+          onClick={() => { setEditing(null); setNewName(''); setNewNameEn(''); setNewSlug(''); setNewType('agora'); setShowModal(true) }}
           className="px-5 py-2.5 bg-primary text-white text-sm font-semibold rounded-xl hover:bg-primary-light transition-colors shadow-sm flex items-center gap-2"
         >
           <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4"/></svg>
@@ -745,6 +808,16 @@ function CategoriesManager({ categories, onRefresh }: {
                   className="w-full px-4 py-2.5 rounded-xl border border-gray-300 focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none text-sm"
                   placeholder="π.χ. Μονοκατοικία"
                   autoFocus
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">English name</label>
+                <input
+                  type="text"
+                  value={newNameEn}
+                  onChange={e => setNewNameEn(e.target.value)}
+                  className="w-full px-4 py-2.5 rounded-xl border border-gray-300 focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none text-sm"
+                  placeholder="e.g. Detached House"
                 />
               </div>
               <div>
@@ -801,6 +874,7 @@ function CategoriesManager({ categories, onRefresh }: {
                 <div key={cat.id} className="px-5 py-3 flex items-center justify-between">
                   <div>
                     <div className="text-sm font-medium text-gray-900">{cat.name_el}</div>
+                    {cat.name_en && <div className="text-xs text-gray-400">{cat.name_en}</div>}
                     <div className="text-xs text-gray-400 font-mono">/{cat.slug}</div>
                   </div>
                   <div className="flex gap-1">
@@ -830,10 +904,12 @@ function OfficeSettings({ settings: initialSettings, onRefresh }: {
   onRefresh: () => void
 }) {
   const [name, setName] = useState(initialSettings?.name || '')
+  const [nameEn, setNameEn] = useState(initialSettings?.name_en || '')
   const [phone, setPhone] = useState(initialSettings?.phone || '')
   const [email, setEmail] = useState(initialSettings?.email || '')
   const [address, setAddress] = useState(initialSettings?.address || '')
   const [aboutText, setAboutText] = useState(initialSettings?.about_text || '')
+  const [aboutTextEn, setAboutTextEn] = useState(initialSettings?.about_text_en || '')
   const [facebook, setFacebook] = useState(initialSettings?.social_links?.facebook || '')
   const [instagram, setInstagram] = useState(initialSettings?.social_links?.instagram || '')
   const [youtube, setYoutube] = useState(initialSettings?.social_links?.youtube || '')
@@ -844,10 +920,12 @@ function OfficeSettings({ settings: initialSettings, onRefresh }: {
   const handleSave = async () => {
     const data = {
       name,
+      name_en: nameEn || null,
       phone,
       email,
       address,
       about_text: aboutText,
+      about_text_en: aboutTextEn || null,
       logo_url: logoUrl,
       social_links: {
         facebook: facebook || null,
@@ -908,6 +986,15 @@ function OfficeSettings({ settings: initialSettings, onRefresh }: {
                   placeholder="Rita Samothraki"
                 />
               </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Όνομα Γραφείου (Αγγλικά)</label>
+                <input
+                  type="text" value={nameEn}
+                  onChange={e => setNameEn(e.target.value)}
+                  className="w-full px-4 py-2.5 rounded-xl border border-gray-300 focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none text-sm"
+                  placeholder="Rita Samothraki Real Estate"
+                />
+              </div>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">Τηλέφωνο</label>
@@ -945,6 +1032,16 @@ function OfficeSettings({ settings: initialSettings, onRefresh }: {
                   rows={5}
                   className="w-full px-4 py-2.5 rounded-xl border border-gray-300 focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none text-sm resize-y"
                   placeholder="Γράψτε μια περιγραφή για το γραφείο σας..."
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Σχετικά με το γραφείο (Αγγλικά)</label>
+                <textarea
+                  value={aboutTextEn}
+                  onChange={e => setAboutTextEn(e.target.value)}
+                  rows={5}
+                  className="w-full px-4 py-2.5 rounded-xl border border-gray-300 focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none text-sm resize-y"
+                  placeholder="Write a description of your agency in English..."
                 />
               </div>
             </div>
@@ -1094,6 +1191,9 @@ export default function AdminApp() {
         </div>
         <div style={{ display: activeTab === 'listings' ? 'block' : 'none' }}>
           <ListingsManager listings={listings} categories={categories} phoneDefault={phoneDefault} onRefresh={() => loadData(true)} />
+        </div>
+        <div style={{ display: activeTab === 'import' ? 'block' : 'none' }}>
+          <BulkImport categories={categories} phoneDefault={phoneDefault} onDone={() => loadData(true)} />
         </div>
         <div style={{ display: activeTab === 'categories' ? 'block' : 'none' }}>
           <CategoriesManager categories={categories} onRefresh={() => loadData(true)} />

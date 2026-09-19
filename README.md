@@ -21,18 +21,20 @@
 ## 📋 Λειτουργίες
 
 ### Δημόσιο Site
-- **Αρχική**: Hero section, Προτεινόμενες αγγελίες, Κατηγορίες, Πρόσφατες αγγελίες
+- **Αρχική**: Hero slideshow με φωτογραφίες, Προτεινόμενες αγγελίες, Κατηγορίες, Πρόσφατες αγγελίες
 - **Αγορά / Ενοικίαση / Πουλήθηκε**: Σελίδες με υποκατηγορίες και φίλτρα
 - **Λεπτομέρεια αγγελίας**: Photo gallery, περιγραφή, τιμή, ενσωματωμένο YouTube video, τηλέφωνο
 - **Το Γραφείο**: Πληροφορίες, λογότυπο, χάρτης, social links
+- **Δύο γλώσσες**: Ελληνικά (default) & Αγγλικά στο `/en/` με language switcher
 - **Πλήρως responsive**: Mobile-first, hamburger menu, dropdowns
 
 ### Admin Panel (`/admin`)
 - **Login** με email/password (Supabase Auth)
 - **Dashboard**: Στατιστικά, πρόσφατες αγγελίες
-- **Αγγελίες**: CRUD, upload φωτογραφιών (drag & drop), YouTube URL, "Προτεινόμενο" toggle, "Πουλήθηκε" status
-- **Κατηγορίες**: Add/edit/delete (Αγορά, Ενοικίαση, Πουλήθηκε)
-- **Ρυθμίσεις Γραφείου**: Όνομα, λογότυπο, τηλέφωνο, email, social links
+- **Αγγελίες**: CRUD, upload φωτογραφιών (drag & drop), YouTube URL, "Προτεινόμενο" toggle, "Πουλήθηκε" status, αγγλικά πεδία + αυτόματη μετάφραση
+- **Μαζική Εισαγωγή**: Εισαγωγή πολλών αγγελιών από JSON/CSV (π.χ. από xe.gr) με φωτογραφίες
+- **Κατηγορίες**: Add/edit/delete (Αγορά, Ενοικίαση, Πουλήθηκε) με ελληνικό & αγγλικό όνομα
+- **Ρυθμίσεις Γραφείου**: Όνομα, λογότυπο, τηλέφωνο, email, social links (Ελληνικά/Αγγλικά)
 
 ## 🔐 Admin Login
 
@@ -45,6 +47,58 @@ Tables: `office_settings`, `categories`, `listings`, `listing_images`
 - **RLS**: Public = SELECT μόνο, Authenticated (admin) = full CRUD
 - **Storage buckets**: `listings` (φωτογραφίες αγγελιών), `office` (λογότυπο)
 - Migration: `supabase/migration.sql`
+- i18n + import metadata: `supabase/migrations/20260920000000_i18n_and_import.sql`
+
+## 📥 Μαζική Εισαγωγή Αγγελιών (xe.gr / Χρυσή Ευκαιρία)
+
+Στο Admin Panel → **Μαζική Εισαγωγή** επικολλάς JSON ή CSV. Υποστηρίζονται ελληνικά και αγγλικά ονόματα στηλών.
+
+Παράδειγμα JSON:
+
+```json
+[
+  {
+    "external_id": "xe-12345",
+    "code": "RS-001",
+    "title": "Διαμέρισμα 80τμ, κέντρο",
+    "description": "Περιγραφή ακινήτου...",
+    "price": 150000,
+    "type": "agora",
+    "category": "diamerisma",
+    "phone": "6970000000",
+    "images": ["https://.../1.jpg", "https://.../2.jpg"],
+    "youtube_url": "",
+    "is_featured": false,
+    "status": "active"
+  }
+]
+```
+
+Στήλες CSV: `external_id, code, title, description, price, type, category, phone, images, youtube_url, is_featured, status`
+(τα `images` χωρίζονται με `|`)
+
+- `type`: `agora`, `enoikiasi`, `poulithike` (ή αγορά/ενοικίαση/πουλήθηκε)
+- Χρησιμοποιείται το `external_id` για αποφυγή διπλοεγγραφών σε επαναληπτική εισαγωγή.
+- Οι εικόνες μεταφορτώνονται στο Supabase Storage (αν το CORS του xe.gr το επιτρέψει), αλλιώς αποθηκεύεται το εξωτερικό URL.
+
+## 🤖 Αυτόματη Μετάφραση (AI)
+
+Η μετάφραση Ελληνικών → Αγγλικών γίνεται από το Supabase Edge Function `translate` (υποστηρίζει OpenAI ή DeepL).
+
+```bash
+# Deploy
+supabase functions deploy translate
+
+# Secrets (ένα από τα δύο)
+supabase secrets set OPENAI_API_KEY=sk-...
+supabase secrets set DEEPL_API_KEY=xxxxxxxx:fx
+
+# Προαιρετικά
+supabase secrets set OPENAI_MODEL=gpt-4o-mini
+```
+
+Χωρίς ρυθμισμένο provider, η μετάφραση απενεργοποιείται και χρησιμοποιούνται τα ελληνικά κείμενα.
+
 
 ## 💻 Τοπική Ανάπτυξη
 

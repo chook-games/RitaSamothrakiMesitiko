@@ -1,6 +1,6 @@
 ---
-import ListingPage from '../../components/pages/ListingPage.astro'
-import { supabase, IS_PLACEHOLDER } from '../../lib/supabase'
+import ListingPage from '../../../components/pages/ListingPage.astro'
+import { supabase, IS_PLACEHOLDER } from '../../../lib/supabase'
 
 export async function getStaticPaths() {
   if (IS_PLACEHOLDER) return []
@@ -15,4 +15,4 @@ export async function getStaticPaths() {
 const { listingId } = Astro.props
 ---
 
-<ListingPage listingId={listingId} lang="el" />
+<ListingPage listingId={listingId} lang="en" />

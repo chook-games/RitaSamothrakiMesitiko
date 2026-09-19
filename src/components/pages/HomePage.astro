@@ -1,0 +1,199 @@
+---
+import Layout from '../../layouts/Layout.astro'
+import HeroSlider from '../HeroSlider.astro'
+import ListingCard from '../ListingCard.astro'
+import CategoryCard from '../CategoryCard.astro'
+import { getListings, getCategories, getOfficeSettings } from '../../lib/supabase'
+import { t, localizePath, pick, type Lang } from '../../i18n/utils'
+
+export interface Props {
+  lang?: Lang
+}
+
+const lang: Lang = Astro.props.lang ?? ((Astro.currentLocale as Lang) ?? 'el')
+
+const featuredListings = await getListings({ featured: true, limit: 8 })
+const recentListings = await getListings({ limit: 6, status: 'active' })
+const categories = await getCategories()
+const settings = await getOfficeSettings()
+
+const officeName = pick(lang, settings?.name || 'Rita Samothraki', settings?.name_en || settings?.name)
+
+const agoraCategories = categories.filter(c => c.type === 'agora' && !c.parent_id)
+const enoikiasiCategories = categories.filter(c => c.type === 'enoikiasi' && !c.parent_id)
+
+const iconFor = (slug: string) =>
+  slug === 'monokatikia' ? 'home' : slug === 'diamerisma' ? 'apartment' : slug === 'ktirio' ? 'building' : slug === 'oikopedo' ? 'land' : 'commercial'
+
+const title = t(lang, 'meta.homeTitle')
+const description = t(lang, 'meta.homeDescription')
+---
+
+<Layout title={title} description={description}>
+  <HeroSlider lang={lang} officeName={officeName} />
+
+  <!-- Featured Listings (Highlights) -->
+  {featuredListings.length > 0 && (
+    <section class="py-16 md:py-24 bg-gray-50">
+      <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div class="text-center mb-12 reveal">
+          <span class="text-sm font-semibold text-accent uppercase tracking-wider">{t(lang, 'home.featuredKicker')}</span>
+          <h2 class="text-3xl md:text-4xl font-bold text-gray-900 mt-2">{t(lang, 'home.featuredTitle')}</h2>
+          <p class="text-gray-500 mt-3 max-w-xl mx-auto">{t(lang, 'home.featuredSubtitle')}</p>
+        </div>
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 reveal">
+          {featuredListings.map(listing => (
+            <ListingCard listing={listing} lang={lang} />
+          ))}
+        </div>
+        <div class="text-center mt-10">
+          <a href={localizePath('/agora', lang)} class="inline-flex items-center gap-2 px-6 py-3 text-primary font-semibold hover:gap-3 transition-all">
+            {t(lang, 'common.viewAll')}
+            <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 8l4 4m0 0l-4 4m4-4H3"/></svg>
+          </a>
+        </div>
+      </div>
+    </section>
+  )}
+
+  <!-- Categories Section -->
+  <section class="py-16 md:py-24">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div class="text-center mb-12 reveal">
+        <span class="text-sm font-semibold text-accent uppercase tracking-wider">{t(lang, 'home.categoriesKicker')}</span>
+        <h2 class="text-3xl md:text-4xl font-bold text-gray-900 mt-2">{t(lang, 'home.categoriesTitle')}</h2>
+        <p class="text-gray-500 mt-3 max-w-xl mx-auto">{t(lang, 'home.categoriesSubtitle')}</p>
+      </div>
+
+      <!-- Αγορά Categories -->
+      <div class="mb-12">
+        <h3 class="text-xl font-bold text-gray-900 mb-6 flex items-center gap-2">
+          <span class="w-1 h-6 bg-accent rounded-full"></span>
+          {t(lang, 'nav.agora')}
+        </h3>
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 reveal">
+          {agoraCategories.map(cat => (
+            <CategoryCard
+              title={pick(lang, cat.name_el, cat.name_en)}
+              description={t(lang, 'home.categoryDesc', { name: pick(lang, cat.name_el, cat.name_en).toLowerCase() })}
+              href={localizePath(`/agora/${cat.slug}`, lang)}
+              icon={iconFor(cat.slug)}
+              viewLabel={t(lang, 'common.view')}
+            />
+          ))}
+          <CategoryCard
+            title={t(lang, 'home.allListings')}
+            description={t(lang, 'home.allListingsDesc')}
+            href={localizePath('/agora', lang)}
+            icon="commercial"
+            viewLabel={t(lang, 'common.view')}
+          />
+        </div>
+      </div>
+
+      <!-- Ενοικίαση Categories -->
+      <div class="mb-8">
+        <h3 class="text-xl font-bold text-gray-900 mb-6 flex items-center gap-2">
+          <span class="w-1 h-6 bg-accent rounded-full"></span>
+          {t(lang, 'nav.enoikiasi')}
+        </h3>
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 reveal">
+          {enoikiasiCategories.map(cat => (
+            <CategoryCard
+              title={pick(lang, cat.name_el, cat.name_en)}
+              description={t(lang, 'home.categoryDesc', { name: pick(lang, cat.name_el, cat.name_en).toLowerCase() })}
+              href={localizePath(`/enoikiasi/${cat.slug}`, lang)}
+              icon={cat.slug === 'monokatikia' ? 'home' : 'apartment'}
+              viewLabel={t(lang, 'common.view')}
+            />
+          ))}
+          <CategoryCard
+            title={t(lang, 'home.allListings')}
+            description={t(lang, 'home.allListingsDesc')}
+            href={localizePath('/enoikiasi', lang)}
+            icon="commercial"
+            viewLabel={t(lang, 'common.view')}
+          />
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Recent Listings -->
+  {recentListings.length > 0 && (
+    <section class="py-16 md:py-24 bg-gray-50">
+      <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div class="flex items-center justify-between mb-10 reveal">
+          <div>
+            <span class="text-sm font-semibold text-accent uppercase tracking-wider">{t(lang, 'home.recentKicker')}</span>
+            <h2 class="text-3xl font-bold text-gray-900 mt-2">{t(lang, 'home.recentTitle')}</h2>
+          </div>
+          <a href={localizePath('/agora', lang)} class="hidden sm:inline-flex items-center gap-2 text-sm font-medium text-primary hover:gap-3 transition-all">
+            {t(lang, 'common.viewAll')}
+            <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 8l4 4m0 0l-4 4m4-4H3"/></svg>
+          </a>
+        </div>
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 reveal">
+          {recentListings.map(listing => (
+            <ListingCard listing={listing} lang={lang} />
+          ))}
+        </div>
+      </div>
+    </section>
+  )}
+
+  <!-- Sold Section CTA -->
+  <section class="py-16 md:py-24">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div class="bg-gradient-to-r from-primary-dark via-primary to-primary-light rounded-3xl p-8 md:p-12 text-white relative overflow-hidden reveal">
+        <div class="absolute inset-0 bg-[url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNDAiIGhlaWdodD0iNDAiIHZpZXdCb3g9IjAgMCA0MCA0MCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48ZyBmaWxsPSJub25lIiBmaWxsLXJ1bGU9ImV2ZW5vZGQiPjxnIGZpbGw9IiNmZmYiIGZpbGwtb3BhY2l0eT0iMC4wNSI+PGNpcmNsZSBjeD0iMjAiIGN5PSIyMCIgcj0iMiIvPjwvZz48L2c+PC9zdmc+')]"></div>
+        <div class="relative z-10 flex flex-col md:flex-row items-center justify-between gap-6">
+          <div>
+            <h2 class="text-2xl md:text-3xl font-bold mb-2">{t(lang, 'home.soldTitle')}</h2>
+            <p class="text-white/80">{t(lang, 'home.soldDesc')}</p>
+          </div>
+          <a href={localizePath('/poulithike', lang)} class="inline-flex items-center gap-2 px-6 py-3.5 bg-white text-primary font-semibold rounded-xl hover:bg-accent hover:text-primary-dark transition-all whitespace-nowrap shadow-lg">
+            <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+            {t(lang, 'home.soldCta')}
+          </a>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Stats / Trust Section -->
+  <section class="py-16 md:py-20 bg-gray-50">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div class="grid grid-cols-2 md:grid-cols-4 gap-8 reveal">
+        <div class="text-center">
+          <div class="text-4xl font-extrabold text-primary mb-1">150+</div>
+          <div class="text-sm text-gray-500">{t(lang, 'home.statsListings')}</div>
+        </div>
+        <div class="text-center">
+          <div class="text-4xl font-extrabold text-primary mb-1">12+</div>
+          <div class="text-sm text-gray-500">{t(lang, 'home.statsYears')}</div>
+        </div>
+        <div class="text-center">
+          <div class="text-4xl font-extrabold text-primary mb-1">100%</div>
+          <div class="text-sm text-gray-500">{t(lang, 'home.statsClients')}</div>
+        </div>
+        <div class="text-center">
+          <div class="text-4xl font-extrabold text-primary mb-1">50+</div>
+          <div class="text-sm text-gray-500">{t(lang, 'home.statsActive')}</div>
+        </div>
+      </div>
+    </div>
+  </section>
+</Layout>
+
+<script>
+  const observer = new IntersectionObserver((entries) => {
+    entries.forEach((entry) => {
+      if (entry.isIntersecting) {
+        entry.target.classList.add('is-visible');
+        observer.unobserve(entry.target);
+      }
+    });
+  }, { threshold: 0.12 });
+  document.querySelectorAll('.reveal').forEach((el) => observer.observe(el));
+</script>

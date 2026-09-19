@@ -29,11 +29,13 @@ export const supabase = IS_PLACEHOLDER
 export interface OfficeSettings {
   id: string
   name: string
+  name_en: string | null
   logo_url: string | null
   phone: string
   email: string
   address: string
   about_text: string
+  about_text_en: string | null
   social_links: {
     facebook?: string
     instagram?: string
@@ -45,6 +47,7 @@ export interface OfficeSettings {
 export interface Category {
   id: string
   name_el: string
+  name_en: string | null
   slug: string
   type: 'agora' | 'enoikiasi' | 'poulithike'
   parent_id: string | null
@@ -55,13 +58,17 @@ export interface Listing {
   id: string
   code: string
   title: string
+  title_en: string | null
   description: string
+  description_en: string | null
   price: number
   category_id: string
   phone: string
   youtube_url: string | null
   is_featured: boolean
   status: 'active' | 'sold'
+  source: string | null
+  external_id: string | null
   created_at: string
   updated_at: string
   // Joined data

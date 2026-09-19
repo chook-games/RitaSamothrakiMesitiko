@@ -1,8 +1,17 @@
 ---
 import { getOfficeSettings } from '../lib/supabase'
+import { t, localizePath, pick, type Lang } from '../i18n/utils'
+
+export interface Props {
+  lang?: Lang
+}
+
+const lang: Lang = Astro.props.lang ?? 'el'
 
 const settings = await getOfficeSettings()
 const currentYear = new Date().getFullYear()
+const officeName = pick(lang, settings?.name || 'Rita Samothraki', settings?.name_en || settings?.name || 'Rita Samothraki')
+const aboutText = pick(lang, settings?.about_text, settings?.about_text_en) || t(lang, 'footer.about')
 ---
 
 <footer class="bg-primary-dark text-gray-300">
@@ -13,37 +22,37 @@ const currentYear = new Date().getFullYear()
       <div class="lg:col-span-2">
         <div class="flex items-center gap-3 mb-4">
           {settings?.logo_url ? (
-            <img src={settings.logo_url} alt={settings.name} class="h-10 w-auto brightness-0 invert" />
+            <img src={settings.logo_url} alt={officeName} class="h-10 w-auto brightness-0 invert" />
           ) : (
             <div class="w-10 h-10 bg-accent rounded-lg flex items-center justify-center text-primary-dark font-bold text-lg">
               RS
             </div>
           )}
           <div>
-            <h3 class="text-lg font-bold text-white">{settings?.name || 'Rita Samothraki'}</h3>
-            <p class="text-xs text-gray-400">Μεσιτικό Γραφείο</p>
+            <h3 class="text-lg font-bold text-white">{officeName}</h3>
+            <p class="text-xs text-gray-400">{t(lang, 'common.realEstateOffice')}</p>
           </div>
         </div>
         <p class="text-sm text-gray-400 leading-relaxed max-w-md">
-          {settings?.about_text || 'Επαγγελματικές υπηρεσίες μεσιτείας με αξιοπιστία, διαφάνεια και εμπειρία. Αναλαμβάνουμε αγοραπωλησίες και ενοικιάσεις ακινήτων.'}
+          {aboutText}
         </p>
       </div>
 
       <!-- Quick Links -->
       <div>
-        <h4 class="text-sm font-semibold text-white uppercase tracking-wider mb-4">Γρήγορη Πλοήγηση</h4>
+        <h4 class="text-sm font-semibold text-white uppercase tracking-wider mb-4">{t(lang, 'footer.quickLinks')}</h4>
         <ul class="space-y-2.5">
-          <li><a href="/" class="text-sm text-gray-400 hover:text-accent transition-colors">Αρχική</a></li>
-          <li><a href="/agora" class="text-sm text-gray-400 hover:text-accent transition-colors">Αγορά</a></li>
-          <li><a href="/enoikiasi" class="text-sm text-gray-400 hover:text-accent transition-colors">Ενοικίαση</a></li>
-          <li><a href="/poulithike" class="text-sm text-gray-400 hover:text-accent transition-colors">Πουλήθηκε</a></li>
-          <li><a href="/grafeio" class="text-sm text-gray-400 hover:text-accent transition-colors">Το Γραφείο</a></li>
+          <li><a href={localizePath('/', lang)} class="text-sm text-gray-400 hover:text-accent transition-colors">{t(lang, 'nav.home')}</a></li>
+          <li><a href={localizePath('/agora', lang)} class="text-sm text-gray-400 hover:text-accent transition-colors">{t(lang, 'nav.agora')}</a></li>
+          <li><a href={localizePath('/enoikiasi', lang)} class="text-sm text-gray-400 hover:text-accent transition-colors">{t(lang, 'nav.enoikiasi')}</a></li>
+          <li><a href={localizePath('/poulithike', lang)} class="text-sm text-gray-400 hover:text-accent transition-colors">{t(lang, 'nav.poulithike')}</a></li>
+          <li><a href={localizePath('/grafeio', lang)} class="text-sm text-gray-400 hover:text-accent transition-colors">{t(lang, 'nav.grafeio')}</a></li>
         </ul>
       </div>
 
       <!-- Contact -->
       <div>
-        <h4 class="text-sm font-semibold text-white uppercase tracking-wider mb-4">Επικοινωνία</h4>
+        <h4 class="text-sm font-semibold text-white uppercase tracking-wider mb-4">{t(lang, 'footer.contact')}</h4>
         <ul class="space-y-3">
           {settings?.phone && (
             <li>
@@ -98,10 +107,10 @@ const currentYear = new Date().getFullYear()
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
       <div class="flex flex-col sm:flex-row items-center justify-between gap-2">
         <p class="text-xs text-gray-500">
-          &copy; {currentYear} {settings?.name || 'Rita Samothraki'}. Με επιφύλαξη παντός δικαιώματος.
+          &copy; {currentYear} {officeName}. {t(lang, 'footer.rights')}
         </p>
         <p class="text-xs text-gray-500">
-          Κατασκευή Ιστοσελίδας
+          {t(lang, 'footer.credit')}
         </p>
       </div>
     </div>

@@ -1,20 +1,36 @@
 ---
 import { getCategories, getOfficeSettings } from '../lib/supabase'
+import type { Category } from '../lib/supabase'
+import { t, localizePath, withBase, pick, type Lang } from '../i18n/utils'
+
+export interface Props {
+  lang?: Lang
+}
+
+const lang: Lang = Astro.props.lang ?? 'el'
 
 const categories = await getCategories()
 const settings = await getOfficeSettings()
 
-// Group categories by type
 const agoraCategories = categories.filter(c => c.type === 'agora')
 const enoikiasiCategories = categories.filter(c => c.type === 'enoikiasi')
-const poulithikeCategories = categories.filter(c => c.type === 'poulithike')
+
+const catName = (c: Category) => pick(lang, c.name_el, c.name_en)
+
+// Language switcher targets (same page, other language)
+const base = (import.meta.env.BASE_URL || '/').replace(/\/$/, '')
+let pathNoBase = Astro.url.pathname.slice(base.length)
+if (!pathNoBase.startsWith('/')) pathNoBase = '/' + pathNoBase
+const pathNoLang = pathNoBase.replace(/^\/en(\/|$)/, '/')
+const elHref = withBase(pathNoLang)
+const enHref = withBase(`/en${pathNoLang === '/' ? '' : pathNoLang}`)
 ---
 
-<header class="bg-white shadow-sm sticky top-0 z-50">
+<header class="bg-white/95 backdrop-blur-md shadow-sm sticky top-0 z-50">
   <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
     <div class="flex items-center justify-between h-16 md:h-20">
       <!-- Logo -->
-      <a href="/" class="flex items-center gap-3 group">
+      <a href={localizePath('/', lang)} class="flex items-center gap-3 group">
         {settings?.logo_url ? (
           <img id="header-logo" src={settings.logo_url} alt={settings.name} class="h-10 w-auto" />
         ) : (
@@ -23,32 +39,32 @@ const poulithikeCategories = categories.filter(c => c.type === 'poulithike')
           </div>
         )}
         <div class="hidden sm:block">
-          <h1 id="header-office-name" class="text-lg font-bold text-primary leading-tight">{settings?.name || 'Rita Samothraki'}</h1>
-          <p class="text-xs text-gray-500">Μεσιτικό Γραφείο</p>
+          <h1 id="header-office-name" class="text-lg font-bold text-primary leading-tight">{pick(lang, settings?.name || 'Rita Samothraki', settings?.name_en || settings?.name || 'Rita Samothraki')}</h1>
+          <p class="text-xs text-gray-500">{t(lang, 'common.realEstateOffice')}</p>
         </div>
       </a>
 
       <!-- Desktop Navigation -->
       <nav class="hidden lg:flex items-center gap-1">
-        <a href="/" class="px-4 py-2 text-sm font-medium text-gray-700 hover:text-primary hover:bg-gray-50 rounded-lg transition-colors">
-          Αρχική
+        <a href={localizePath('/', lang)} class="px-4 py-2 text-sm font-medium text-gray-700 hover:text-primary hover:bg-gray-50 rounded-lg transition-colors">
+          {t(lang, 'nav.home')}
         </a>
-        
+
         <!-- Αγορά Dropdown -->
         <div class="relative group">
-          <a href="/agora" class="px-4 py-2 text-sm font-medium text-gray-700 hover:text-primary hover:bg-gray-50 rounded-lg transition-colors inline-flex items-center gap-1">
-            Αγορά
+          <a href={localizePath('/agora', lang)} class="px-4 py-2 text-sm font-medium text-gray-700 hover:text-primary hover:bg-gray-50 rounded-lg transition-colors inline-flex items-center gap-1">
+            {t(lang, 'nav.agora')}
             <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
           </a>
           <div class="absolute left-0 top-full pt-2 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200">
             <div class="bg-white rounded-xl shadow-xl border border-gray-100 py-2 min-w-[220px]">
-              <a href="/agora" class="block px-4 py-2.5 text-sm text-gray-700 hover:text-primary hover:bg-gray-50 font-medium">
-                Όλες οι αγγελίες
+              <a href={localizePath('/agora', lang)} class="block px-4 py-2.5 text-sm text-gray-700 hover:text-primary hover:bg-gray-50 font-medium">
+                {t(lang, 'nav.allListings')}
               </a>
               <div class="border-t border-gray-100 my-1"></div>
               {agoraCategories.filter(c => !c.parent_id).map(cat => (
-                <a href={`/agora/${cat.slug}`} class="block px-4 py-2.5 text-sm text-gray-700 hover:text-primary hover:bg-gray-50 transition-colors">
-                  {cat.name_el}
+                <a href={localizePath(`/agora/${cat.slug}`, lang)} class="block px-4 py-2.5 text-sm text-gray-700 hover:text-primary hover:bg-gray-50 transition-colors">
+                  {catName(cat)}
                 </a>
               ))}
             </div>
@@ -57,67 +73,75 @@ const poulithikeCategories = categories.filter(c => c.type === 'poulithike')
 
         <!-- Ενοικίαση Dropdown -->
         <div class="relative group">
-          <a href="/enoikiasi" class="px-4 py-2 text-sm font-medium text-gray-700 hover:text-primary hover:bg-gray-50 rounded-lg transition-colors inline-flex items-center gap-1">
-            Ενοικίαση
+          <a href={localizePath('/enoikiasi', lang)} class="px-4 py-2 text-sm font-medium text-gray-700 hover:text-primary hover:bg-gray-50 rounded-lg transition-colors inline-flex items-center gap-1">
+            {t(lang, 'nav.enoikiasi')}
             <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
           </a>
           <div class="absolute left-0 top-full pt-2 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200">
             <div class="bg-white rounded-xl shadow-xl border border-gray-100 py-2 min-w-[220px]">
-              <a href="/enoikiasi" class="block px-4 py-2.5 text-sm text-gray-700 hover:text-primary hover:bg-gray-50 font-medium">
-                Όλες οι αγγελίες
+              <a href={localizePath('/enoikiasi', lang)} class="block px-4 py-2.5 text-sm text-gray-700 hover:text-primary hover:bg-gray-50 font-medium">
+                {t(lang, 'nav.allListings')}
               </a>
               <div class="border-t border-gray-100 my-1"></div>
               {enoikiasiCategories.filter(c => !c.parent_id).map(cat => (
-                <a href={`/enoikiasi/${cat.slug}`} class="block px-4 py-2.5 text-sm text-gray-700 hover:text-primary hover:bg-gray-50 transition-colors">
-                  {cat.name_el}
+                <a href={localizePath(`/enoikiasi/${cat.slug}`, lang)} class="block px-4 py-2.5 text-sm text-gray-700 hover:text-primary hover:bg-gray-50 transition-colors">
+                  {catName(cat)}
                 </a>
               ))}
             </div>
           </div>
         </div>
 
-        <a href="/poulithike" class="px-4 py-2 text-sm font-medium text-gray-700 hover:text-primary hover:bg-gray-50 rounded-lg transition-colors">
-          Πουλήθηκε
+        <a href={localizePath('/poulithike', lang)} class="px-4 py-2 text-sm font-medium text-gray-700 hover:text-primary hover:bg-gray-50 rounded-lg transition-colors">
+          {t(lang, 'nav.poulithike')}
         </a>
 
-        <a href="/grafeio" class="px-4 py-2 text-sm font-medium text-gray-700 hover:text-primary hover:bg-gray-50 rounded-lg transition-colors">
-          Το Γραφείο
+        <a href={localizePath('/grafeio', lang)} class="px-4 py-2 text-sm font-medium text-gray-700 hover:text-primary hover:bg-gray-50 rounded-lg transition-colors">
+          {t(lang, 'nav.grafeio')}
         </a>
       </nav>
 
-      <!-- Contact Button Desktop -->
-      <a id="header-phone-link" href={`tel:${settings?.phone || '2100000000'}`} class="hidden lg:inline-flex items-center gap-2 px-5 py-2.5 bg-primary text-white text-sm font-medium rounded-xl hover:bg-primary-light transition-colors shadow-sm">
-        <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z"/></svg>
-        <span id="header-phone-text">{settings?.phone || '210 0000 000'}</span>
-      </a>
+      <div class="flex items-center gap-2">
+        <!-- Language switcher -->
+        <div class="hidden lg:flex items-center rounded-xl border border-gray-200 p-0.5 text-xs font-semibold" aria-label={t(lang, 'nav.language')}>
+          <a href={elHref} class={`px-2.5 py-1.5 rounded-lg transition-colors ${lang === 'el' ? 'bg-primary text-white' : 'text-gray-500 hover:text-primary'}`}>EL</a>
+          <a href={enHref} class={`px-2.5 py-1.5 rounded-lg transition-colors ${lang === 'en' ? 'bg-primary text-white' : 'text-gray-500 hover:text-primary'}`}>EN</a>
+        </div>
 
-      <!-- Mobile menu button -->
-      <button id="mobile-menu-btn" class="lg:hidden p-2 rounded-lg text-gray-600 hover:text-primary hover:bg-gray-100 transition-colors" aria-label="Μενού">
-        <svg class="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-          <path id="menu-icon-open" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"/>
-          <path id="menu-icon-close" class="hidden" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
-        </svg>
-      </button>
+        <!-- Contact Button Desktop -->
+        <a id="header-phone-link" href={`tel:${settings?.phone || '2100000000'}`} class="hidden lg:inline-flex items-center gap-2 px-5 py-2.5 bg-primary text-white text-sm font-medium rounded-xl hover:bg-primary-light transition-colors shadow-sm">
+          <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z"/></svg>
+          <span id="header-phone-text">{settings?.phone || '210 0000 000'}</span>
+        </a>
+
+        <!-- Mobile menu button -->
+        <button id="mobile-menu-btn" class="lg:hidden p-2 rounded-lg text-gray-600 hover:text-primary hover:bg-gray-100 transition-colors" aria-label={t(lang, 'nav.menu')}>
+          <svg class="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path id="menu-icon-open" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"/>
+            <path id="menu-icon-close" class="hidden" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+          </svg>
+        </button>
+      </div>
     </div>
   </div>
 
   <!-- Mobile Menu -->
   <div id="mobile-menu" class="lg:hidden hidden max-h-0 overflow-hidden transition-all duration-300 border-t border-gray-100">
     <div class="px-4 py-3 space-y-1">
-      <a href="/" class="block px-3 py-2.5 rounded-lg text-sm font-medium text-gray-700 hover:text-primary hover:bg-gray-50">
-        Αρχική
+      <a href={localizePath('/', lang)} class="block px-3 py-2.5 rounded-lg text-sm font-medium text-gray-700 hover:text-primary hover:bg-gray-50">
+        {t(lang, 'nav.home')}
       </a>
-      
+
       <!-- Mobile Κατηγορίες Αγορά -->
       <div class="border-t border-gray-50 pt-1">
         <button class="mobile-submenu-btn w-full flex items-center justify-between px-3 py-2.5 rounded-lg text-sm font-medium text-gray-700 hover:text-primary hover:bg-gray-50" data-target="submenu-agora">
-          <span>Αγορά</span>
+          <span>{t(lang, 'nav.agora')}</span>
           <svg class="w-4 h-4 transition-transform" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
         </button>
         <div id="submenu-agora" class="hidden pl-4 pb-2">
-          <a href="/agora" class="block px-3 py-2 text-sm text-gray-600 hover:text-primary rounded-lg">Όλες οι αγγελίες</a>
+          <a href={localizePath('/agora', lang)} class="block px-3 py-2 text-sm text-gray-600 hover:text-primary rounded-lg">{t(lang, 'nav.allListings')}</a>
           {agoraCategories.filter(c => !c.parent_id).map(cat => (
-            <a href={`/agora/${cat.slug}`} class="block px-3 py-2 text-sm text-gray-600 hover:text-primary rounded-lg">{cat.name_el}</a>
+            <a href={localizePath(`/agora/${cat.slug}`, lang)} class="block px-3 py-2 text-sm text-gray-600 hover:text-primary rounded-lg">{catName(cat)}</a>
           ))}
         </div>
       </div>
@@ -125,23 +149,29 @@ const poulithikeCategories = categories.filter(c => c.type === 'poulithike')
       <!-- Mobile Κατηγορίες Ενοικίαση -->
       <div class="border-t border-gray-50 pt-1">
         <button class="mobile-submenu-btn w-full flex items-center justify-between px-3 py-2.5 rounded-lg text-sm font-medium text-gray-700 hover:text-primary hover:bg-gray-50" data-target="submenu-enoikiasi">
-          <span>Ενοικίαση</span>
+          <span>{t(lang, 'nav.enoikiasi')}</span>
           <svg class="w-4 h-4 transition-transform" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
         </button>
         <div id="submenu-enoikiasi" class="hidden pl-4 pb-2">
-          <a href="/enoikiasi" class="block px-3 py-2 text-sm text-gray-600 hover:text-primary rounded-lg">Όλες οι αγγελίες</a>
+          <a href={localizePath('/enoikiasi', lang)} class="block px-3 py-2 text-sm text-gray-600 hover:text-primary rounded-lg">{t(lang, 'nav.allListings')}</a>
           {enoikiasiCategories.filter(c => !c.parent_id).map(cat => (
-            <a href={`/enoikiasi/${cat.slug}`} class="block px-3 py-2 text-sm text-gray-600 hover:text-primary rounded-lg">{cat.name_el}</a>
+            <a href={localizePath(`/enoikiasi/${cat.slug}`, lang)} class="block px-3 py-2 text-sm text-gray-600 hover:text-primary rounded-lg">{catName(cat)}</a>
           ))}
         </div>
       </div>
 
-      <a href="/poulithike" class="block px-3 py-2.5 rounded-lg text-sm font-medium text-gray-700 hover:text-primary hover:bg-gray-50 border-t border-gray-50">
-        Πουλήθηκε
+      <a href={localizePath('/poulithike', lang)} class="block px-3 py-2.5 rounded-lg text-sm font-medium text-gray-700 hover:text-primary hover:bg-gray-50 border-t border-gray-50">
+        {t(lang, 'nav.poulithike')}
       </a>
-      <a href="/grafeio" class="block px-3 py-2.5 rounded-lg text-sm font-medium text-gray-700 hover:text-primary hover:bg-gray-50">
-        Το Γραφείο
+      <a href={localizePath('/grafeio', lang)} class="block px-3 py-2.5 rounded-lg text-sm font-medium text-gray-700 hover:text-primary hover:bg-gray-50">
+        {t(lang, 'nav.grafeio')}
       </a>
+
+      <!-- Mobile language switcher -->
+      <div class="border-t border-gray-100 pt-3 mt-2 flex items-center gap-2">
+        <a href={elHref} class={`flex-1 text-center px-3 py-2 text-sm font-semibold rounded-xl border ${lang === 'el' ? 'bg-primary text-white border-primary' : 'text-gray-600 border-gray-200'}`}>Ελληνικά</a>
+        <a href={enHref} class={`flex-1 text-center px-3 py-2 text-sm font-semibold rounded-xl border ${lang === 'en' ? 'bg-primary text-white border-primary' : 'text-gray-600 border-gray-200'}`}>English</a>
+      </div>
 
       <div class="border-t border-gray-100 pt-3 mt-2">
         <a id="mobile-phone-link" href={`tel:${settings?.phone || '2100000000'}`} class="flex items-center justify-center gap-2 px-4 py-3 bg-primary text-white text-sm font-medium rounded-xl hover:bg-primary-light transition-colors">
@@ -180,7 +210,6 @@ const poulithikeCategories = categories.filter(c => c.type === 'poulithike')
     btn.addEventListener('click', () => {
       const target = document.getElementById(btn.dataset.target);
       const arrow = btn.querySelector('svg');
-      const isOpen = !target.classList.contains('hidden');
       target.classList.toggle('hidden');
       arrow.classList.toggle('rotate-180');
     });
@@ -209,7 +238,8 @@ const poulithikeCategories = categories.filter(c => c.type === 'poulithike')
       }
       if (s.name) {
         const nameEl = document.getElementById('header-office-name');
-        if (nameEl) nameEl.textContent = s.name;
+        const isEn = document.documentElement.lang === 'en';
+        if (nameEl) nameEl.textContent = isEn ? (s.name_en || s.name) : s.name;
       }
       if (s.phone) {
         const pt = document.getElementById('header-phone-text');

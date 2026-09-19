@@ -1,0 +1,98 @@
+---
+import Layout from '../../layouts/Layout.astro'
+import ListingCard from '../ListingCard.astro'
+import { getListings, getCategories } from '../../lib/supabase'
+import type { Category } from '../../lib/supabase'
+import { t, localizePath, pick, type Lang } from '../../i18n/utils'
+
+export interface Props {
+  type: 'agora' | 'enoikiasi' | 'poulithike'
+  category?: Category | null
+  lang?: Lang
+}
+
+const { type, category = null } = Astro.props
+const lang: Lang = Astro.props.lang ?? ((Astro.currentLocale as Lang) ?? 'el')
+
+const status = type === 'poulithike' ? 'sold' : 'active'
+const titleKey = (`list.${type}Title`) as 'list.agoraTitle' | 'list.enoikiasiTitle' | 'list.poulithikeTitle'
+const emptyKey = type === 'agora' ? 'list.emptyDescAgora' : type === 'enoikiasi' ? 'list.emptyDescEnoikiasi' : 'list.emptyDescPoulithike'
+
+const listings = category
+  ? await getListings({ categoryId: category.id, status })
+  : await getListings({ type, status })
+const categories = await getCategories(type)
+
+const catName = (c: Category) => pick(lang, c.name_el, c.name_en)
+const pageTitle = category ? `${catName(category)} - ${t(lang, titleKey)}` : t(lang, titleKey)
+const countLabel = type === 'poulithike'
+  ? t(lang, 'list.completed', { count: listings.length })
+  : t(lang, 'list.available', { count: listings.length })
+---
+
+<Layout title={`${pageTitle} | Rita Samothraki`} description={pageTitle}>
+  <div class="bg-gray-50 min-h-screen">
+    <!-- Header -->
+    <div class="bg-white border-b border-gray-200">
+      <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 md:py-12">
+        <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-6">
+          <div>
+            {category && (
+              <div class="flex items-center gap-2 text-sm text-gray-400 mb-2">
+                <a href={localizePath(`/${type}`, lang)} class="hover:text-primary">{t(lang, titleKey)}</a>
+                <span>/</span>
+                <span class="text-gray-600">{catName(category)}</span>
+              </div>
+            )}
+            {type === 'poulithike' && !category && (
+              <div class="flex items-center gap-2 text-sm text-gray-400 mb-2">
+                <span class="px-2 py-0.5 bg-sold/10 text-sold text-xs font-semibold rounded-full">{t(lang, 'card.sold')}</span>
+              </div>
+            )}
+            <h1 class="text-3xl md:text-4xl font-bold text-gray-900">
+              {category ? catName(category) : t(lang, titleKey)}
+            </h1>
+            <p class="text-gray-500 mt-2">{countLabel}</p>
+          </div>
+          <!-- Category filter -->
+          <div class="flex flex-wrap gap-2">
+            <a href={localizePath(`/${type}`, lang)} class={`px-4 py-2 text-sm font-medium rounded-xl transition-colors ${!category ? 'bg-primary text-white' : 'bg-gray-100 text-gray-700 hover:bg-primary/10 hover:text-primary'}`}>
+              {t(lang, 'common.all')}
+            </a>
+            {categories.filter(c => !c.parent_id).map(cat => (
+              <a
+                href={localizePath(`/${type}/${cat.slug}`, lang)}
+                class={`px-4 py-2 text-sm font-medium rounded-xl transition-colors ${category && cat.id === category.id ? 'bg-primary text-white' : 'bg-gray-100 text-gray-700 hover:bg-primary/10 hover:text-primary'}`}
+              >
+                {catName(cat)}
+              </a>
+            ))}
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Listings Grid -->
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 md:py-12">
+      {listings.length > 0 ? (
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+          {listings.map(listing => (
+            <ListingCard listing={listing} lang={lang} />
+          ))}
+        </div>
+      ) : (
+        <div class="text-center py-20">
+          <svg class="w-16 h-16 text-gray-300 mx-auto mb-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            {type === 'poulithike' ? (
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+            ) : (
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
+            )}
+          </svg>
+          <h3 class="text-lg font-semibold text-gray-900 mb-2">{t(lang, 'list.emptyTitle')}</h3>
+          <p class="text-gray-500">{category ? t(lang, 'list.emptyDescCategory') : t(lang, emptyKey)}</p>
+        </div>
+      )}
+    </div>
+  </div>
+</Layout>
