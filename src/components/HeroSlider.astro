@@ -1,6 +1,6 @@
 ---
 import { t, localizePath, type Lang } from '../i18n/utils'
-import { getHeroSlides } from '../lib/supabase'
+import { getHeroSlides, getOfficeSettings } from '../lib/supabase'
 
 export interface Props {
   lang?: Lang
@@ -12,11 +12,17 @@ const officeName = Astro.props.officeName ?? 'Rita Samothraki'
 
 type SlideItem = { url: string; duration: number; effect: string }
 
-// Slides come ONLY from the admin panel (hero_slides table).
-const items: SlideItem[] = (await getHeroSlides()).map(s => ({
+// Global slideshow settings (from admin) + slides (only from admin)
+const settings = await getOfficeSettings()
+const heroDuration = Number(settings?.hero_duration_ms) || 6000
+const heroEffect = settings?.hero_effect || 'fade'
+const ALL_EFFECTS = ['fade', 'slide', 'zoom']
+const effectFor = (i: number) => (heroEffect === 'all' ? ALL_EFFECTS[i % ALL_EFFECTS.length] : heroEffect)
+
+const items: SlideItem[] = (await getHeroSlides()).map((s, i) => ({
   url: s.image_url,
-  duration: Number(s.duration_ms) || 6000,
-  effect: s.effect || 'fade',
+  duration: heroDuration,
+  effect: effectFor(i),
 }))
 ---
 
@@ -137,10 +143,28 @@ const items: SlideItem[] = (await getHeroSlides()).map(s => ({
         const key = import.meta.env.PUBLIC_SUPABASE_ANON_KEY;
         if (!url || !key || url.includes('placeholder')) return;
 
-        const res = await fetch(`${url}/rest/v1/hero_slides?select=*&is_active=eq.true&order=order.asc`, {
-          headers: { apikey: key, Authorization: `Bearer ${key}` },
-        });
+        const [res, settingsRes] = await Promise.all([
+          fetch(`${url}/rest/v1/hero_slides?select=*&is_active=eq.true&order=order.asc`, {
+            headers: { apikey: key, Authorization: `Bearer ${key}` },
+          }),
+          fetch(`${url}/rest/v1/office_settings?select=hero_duration_ms,hero_effect&limit=1`, {
+            headers: { apikey: key, Authorization: `Bearer ${key}` },
+          }),
+        ]);
         if (!res.ok) return;
+
+        let heroDuration = 6000;
+        let heroEffect = 'fade';
+        if (settingsRes.ok) {
+          const srows = await settingsRes.json();
+          if (Array.isArray(srows) && srows[0]) {
+            heroDuration = Number(srows[0].hero_duration_ms) || 6000;
+            heroEffect = srows[0].hero_effect || 'fade';
+          }
+        }
+        const allEffects = ['fade', 'slide', 'zoom'];
+        const effectFor = (i) => (heroEffect === 'all' ? allEffects[i % allEffects.length] : heroEffect);
+
         const rows = await res.json();
         if (!Array.isArray(rows) || rows.length === 0) {
           // No slides configured in the admin panel — show only the gradient background
@@ -150,10 +174,9 @@ const items: SlideItem[] = (await getHeroSlides()).map(s => ({
           return;
         }
 
-        const effects = ['fade', 'slide', 'zoom'];
         container.innerHTML = rows.map((row, i) => {
-          const dur = Number(row.duration_ms) || 6000;
-          const effect = effects.includes(row.effect) ? row.effect : 'fade';
+          const dur = heroDuration;
+          const effect = effectFor(i);
           const style = effect === 'zoom' ? ` style="transition-duration:${dur}ms"` : '';
           return `<div class="hero-slide absolute inset-0${i === 0 ? ' is-active' : ''}" data-hero-slide data-effect="${effect}" data-duration="${dur}">` +
             `<img src="${esc(row.image_url)}" alt="" class="w-full h-full object-cover" decoding="async"${style} /></div>`;

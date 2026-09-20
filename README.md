@@ -33,7 +33,7 @@
 - **Dashboard**: Στατιστικά, πρόσφατες αγγελίες
 - **Αγγελίες**: CRUD, upload φωτογραφιών (drag & drop), YouTube URL, "Προτεινόμενο" toggle, "Πουλήθηκε" status, αγγλικά πεδία + αυτόματη μετάφραση
 - **Μαζική Εισαγωγή**: Εισαγωγή πολλών αγγελιών από JSON/CSV (π.χ. από xe.gr) με φωτογραφίες
-- **Slideshow**: Διαχείριση εικόνων αρχικής σελίδας (προσθήκη/διαγραφή, σειρά, διάρκεια, εφέ)
+- **Slideshow**: Ανέβασμα πολλών εικόνων μαζί, σειρά, ενεργό/ανενεργό, ρυθμίσεις διάρκειας & εφέ (crossfade/ολίσθηση/zoom/όλα)
 - **Κατηγορίες**: Add/edit/delete (Αγορά, Ενοικίαση, Πουλήθηκε) με ελληνικό & αγγλικό όνομα
 - **Ρυθμίσεις Γραφείου**: Όνομα, λογότυπο + μέγεθος λογότυπου, τηλέφωνο, email, social links (Ελληνικά/Αγγλικά)
 
@@ -56,6 +56,7 @@ Tables: `office_settings`, `categories`, `listings`, `listing_images`
 - Migration: `supabase/migration.sql`
 - i18n + import metadata: `supabase/migrations/20260920000000_i18n_and_import.sql`
 - Hero slideshow + logo size: `supabase/migrations/20260920010000_hero_slides.sql`
+- Hero slideshow settings (duration/effect): `supabase/migrations/20260920020000_hero_settings.sql`
 
 ## 📥 Μαζική Εισαγωγή Αγγελιών (xe.gr / Χρυσή Ευκαιρία)
 

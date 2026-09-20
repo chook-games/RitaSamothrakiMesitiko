@@ -36,6 +36,8 @@ export interface OfficeSettings {
   name_en: string | null
   logo_url: string | null
   logo_height: number | null
+  hero_duration_ms: number | null
+  hero_effect: string | null
   phone: string
   email: string
   address: string

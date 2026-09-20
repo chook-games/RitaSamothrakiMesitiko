@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react'
+import React, { useEffect, useRef, useState } from 'react'
 import { supabase } from '../../lib/supabase'
 import type { HeroSlide } from '../../lib/supabase'
 import { Toast } from './shared'
@@ -7,75 +7,67 @@ const EFFECTS = [
   { value: 'fade', label: 'Crossfade (απαλό)' },
   { value: 'slide', label: 'Ολίσθηση' },
   { value: 'zoom', label: 'Zoom' },
+  { value: 'all', label: 'Όλα (με τη σειρά: crossfade → ολίσθηση → zoom)' },
 ]
 
 export default function SlidesManager() {
   const [slides, setSlides] = useState<HeroSlide[]>([])
   const [loading, setLoading] = useState(true)
   const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' } | null>(null)
-  const [showModal, setShowModal] = useState(false)
-  const [editing, setEditing] = useState<HeroSlide | null>(null)
-  const [imageUrl, setImageUrl] = useState('')
+  const [uploading, setUploading] = useState(false)
+  const fileInputRef = useRef<HTMLInputElement>(null)
+
+  // Global settings
+  const [settingsId, setSettingsId] = useState<string | null>(null)
   const [durationSec, setDurationSec] = useState(6)
   const [effect, setEffect] = useState('fade')
-  const [isActive, setIsActive] = useState(true)
-  const [uploading, setUploading] = useState(false)
+  const [showSettings, setShowSettings] = useState(false)
+  const [savingSettings, setSavingSettings] = useState(false)
 
   const load = async () => {
     setLoading(true)
-    const { data, error } = await supabase.from('hero_slides').select('*').order('order', { ascending: true })
-    if (error) setToast({ message: 'Σφάλμα: ' + error.message, type: 'error' })
-    setSlides((data as HeroSlide[]) || [])
+    const [slidesRes, settingsRes] = await Promise.all([
+      supabase.from('hero_slides').select('*').order('order', { ascending: true }),
+      supabase.from('office_settings').select('id,hero_duration_ms,hero_effect').limit(1).single(),
+    ])
+    if (slidesRes.error) setToast({ message: 'Σφάλμα: ' + slidesRes.error.message, type: 'error' })
+    setSlides((slidesRes.data as HeroSlide[]) || [])
+    if (settingsRes.data) {
+      setSettingsId(settingsRes.data.id)
+      setDurationSec((Number(settingsRes.data.hero_duration_ms) || 6000) / 1000)
+      setEffect(settingsRes.data.hero_effect || 'fade')
+    }
     setLoading(false)
   }
 
   useEffect(() => { load() }, [])
 
-  const openNew = () => {
-    setEditing(null); setImageUrl(''); setDurationSec(6); setEffect('fade'); setIsActive(true); setShowModal(true)
-  }
-
-  const openEdit = (slide: HeroSlide) => {
-    setEditing(slide)
-    setImageUrl(slide.image_url)
-    setDurationSec((Number(slide.duration_ms) || 6000) / 1000)
-    setEffect(slide.effect || 'fade')
-    setIsActive(slide.is_active ?? true)
-    setShowModal(true)
-  }
-
   const handleUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0]
-    if (!file) return
+    const files = Array.from(e.target.files || [])
+    if (files.length === 0) return
     setUploading(true)
-    const ext = file.name.split('.').pop()
-    const path = `hero/${Date.now()}.${ext}`
-    const { error } = await supabase.storage.from('listings').upload(path, file, { upsert: true })
-    if (error) { setToast({ message: 'Σφάλμα upload: ' + error.message, type: 'error' }); setUploading(false); return }
-    const { data } = supabase.storage.from('listings').getPublicUrl(path)
-    setImageUrl(data.publicUrl)
-    setUploading(false)
-  }
+    let order = slides.reduce((max, s) => Math.max(max, Number(s.order) || 0), 0)
+    let added = 0
 
-  const handleSave = async () => {
-    if (!imageUrl) { setToast({ message: 'Επιλέξτε εικόνα', type: 'error' }); return }
-    const payload = {
-      image_url: imageUrl,
-      duration_ms: Math.max(1, Math.round(durationSec)) * 1000,
-      effect,
-      is_active: isActive,
+    for (const file of files) {
+      order++
+      const ext = file.name.split('.').pop()
+      const path = `hero/${Date.now()}_${order}.${ext}`
+      const { error: uploadError } = await supabase.storage.from('listings').upload(path, file, { upsert: true })
+      if (uploadError) { setToast({ message: 'Σφάλμα upload: ' + uploadError.message, type: 'error' }); continue }
+      const { data } = supabase.storage.from('listings').getPublicUrl(path)
+      const { error: insertError } = await supabase.from('hero_slides').insert({
+        image_url: data.publicUrl,
+        order,
+        is_active: true,
+      })
+      if (insertError) { setToast({ message: 'Σφάλμα: ' + insertError.message, type: 'error' }); continue }
+      added++
     }
-    if (editing) {
-      const { error } = await supabase.from('hero_slides').update(payload).eq('id', editing.id)
-      if (error) { setToast({ message: 'Σφάλμα: ' + error.message, type: 'error' }); return }
-      setToast({ message: 'Το slide ενημερώθηκε!', type: 'success' })
-    } else {
-      const maxOrder = slides.reduce((m, s) => Math.max(m, Number(s.order) || 0), 0)
-      const { error } = await supabase.from('hero_slides').insert({ ...payload, order: maxOrder + 1 })
-      if (error) { setToast({ message: 'Σφάλμα: ' + error.message, type: 'error' }); return }
-      setToast({ message: 'Το slide προστέθηκε!', type: 'success' })
-    }
-    setShowModal(false)
+
+    if (fileInputRef.current) fileInputRef.current.value = ''
+    setUploading(false)
+    if (added > 0) setToast({ message: `Προστέθηκαν ${added} εικόνες!`, type: 'success' })
     load()
   }
 
@@ -104,22 +96,42 @@ export default function SlidesManager() {
     load()
   }
 
+  const handleSaveSettings = async () => {
+    if (!settingsId) { setToast({ message: 'Δεν βρέθηκαν ρυθμίσεις γραφείου.', type: 'error' }); return }
+    setSavingSettings(true)
+    const { error } = await supabase.from('office_settings').update({
+      hero_duration_ms: Math.max(1, Math.round(durationSec)) * 1000,
+      hero_effect: effect,
+    }).eq('id', settingsId)
+    setSavingSettings(false)
+    if (error) { setToast({ message: 'Σφάλμα: ' + error.message, type: 'error' }); return }
+    setToast({ message: 'Οι ρυθμίσεις αποθηκεύτηκαν!', type: 'success' })
+    setShowSettings(false)
+  }
+
   return (
     <div className="p-6 md:p-8">
       {toast && <Toast message={toast.message} type={toast.type} onClose={() => setToast(null)} />}
 
-      <div className="flex items-center justify-between mb-6 flex-wrap gap-3">
+      <div className="flex items-start justify-between mb-6 flex-wrap gap-3">
         <div>
           <h1 className="text-2xl font-bold text-gray-900">Slideshow Αρχικής</h1>
-          <p className="text-sm text-gray-500 mt-1">Οι εικόνες που εναλλάσσονται στο πάνω μέρος της αρχικής σελίδας. Τα slides προστίθενται αποκλειστικά από εδώ — αν δεν υπάρχει κανένα ενεργό slide, η αρχική δείχνει μόνο το χρώμα φόντου.</p>
+          <p className="text-sm text-gray-500 mt-1">Οι εικόνες που εναλλάσσονται στο πάνω μέρος της αρχικής. Ανέβασε πολλές μαζί — η σειρά είναι η σειρά επιλογής.</p>
         </div>
-        <button
-          onClick={openNew}
-          className="px-5 py-2.5 bg-primary text-white text-sm font-semibold rounded-xl hover:bg-primary-light transition-colors shadow-sm flex items-center gap-2"
-        >
-          <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4"/></svg>
-          Νέο Slide
-        </button>
+        <div className="flex items-center gap-3">
+          <button
+            onClick={() => setShowSettings(true)}
+            className="px-5 py-2.5 bg-gray-100 text-gray-700 text-sm font-semibold rounded-xl hover:bg-gray-200 transition-colors flex items-center gap-2"
+          >
+            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.066 2.573c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.573 1.066c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.066-2.573c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z M15 12a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
+            Ρυθμίσεις
+          </button>
+          <label className="px-5 py-2.5 bg-primary text-white text-sm font-semibold rounded-xl hover:bg-primary-light transition-colors shadow-sm cursor-pointer flex items-center gap-2">
+            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"/></svg>
+            {uploading ? 'Ανέβασμα...' : 'Upload images'}
+            <input ref={fileInputRef} type="file" accept="image/*" multiple onChange={handleUpload} className="hidden" disabled={uploading} />
+          </label>
+        </div>
       </div>
 
       {loading ? (
@@ -132,8 +144,6 @@ export default function SlidesManager() {
                 <tr className="text-left text-xs text-gray-400 uppercase tracking-wider bg-gray-50">
                   <th className="px-5 py-3">Εικόνα</th>
                   <th className="px-5 py-3">Σειρά</th>
-                  <th className="px-5 py-3">Διάρκεια</th>
-                  <th className="px-5 py-3">Εφέ</th>
                   <th className="px-5 py-3">Κατάσταση</th>
                   <th className="px-5 py-3">Ενέργειες</th>
                 </tr>
@@ -154,8 +164,6 @@ export default function SlidesManager() {
                         </button>
                       </div>
                     </td>
-                    <td className="px-5 py-3">{(Number(slide.duration_ms) || 6000) / 1000}s</td>
-                    <td className="px-5 py-3">{EFFECTS.find(e => e.value === (slide.effect || 'fade'))?.label || 'Crossfade'}</td>
                     <td className="px-5 py-3">
                       <button
                         onClick={() => toggleActive(slide)}
@@ -165,19 +173,14 @@ export default function SlidesManager() {
                       </button>
                     </td>
                     <td className="px-5 py-3">
-                      <div className="flex items-center gap-2">
-                        <button onClick={() => openEdit(slide)} className="p-1.5 text-gray-400 hover:text-primary hover:bg-gray-100 rounded-lg" title="Επεξεργασία">
-                          <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/></svg>
-                        </button>
-                        <button onClick={() => handleDelete(slide.id)} className="p-1.5 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg" title="Διαγραφή">
-                          <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
-                        </button>
-                      </div>
+                      <button onClick={() => handleDelete(slide.id)} className="p-1.5 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg" title="Διαγραφή">
+                        <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
+                      </button>
                     </td>
                   </tr>
                 ))}
                 {slides.length === 0 && (
-                  <tr><td colSpan={6} className="px-5 py-12 text-center text-gray-400">Δεν υπάρχουν slides. Πατήστε «Νέο Slide» για να προσθέσετε.</td></tr>
+                  <tr><td colSpan={4} className="px-5 py-12 text-center text-gray-400">Δεν υπάρχουν slides. Πατήστε «Upload images» για να προσθέσετε.</td></tr>
                 )}
               </tbody>
             </table>
@@ -185,70 +188,46 @@ export default function SlidesManager() {
         </div>
       )}
 
-      {showModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4" onClick={() => setShowModal(false)}>
-          <div className="bg-white rounded-2xl shadow-2xl p-6 w-full max-w-lg max-h-[90vh] overflow-y-auto" onClick={e => e.stopPropagation()}>
+      {showSettings && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4" onClick={() => setShowSettings(false)}>
+          <div className="bg-white rounded-2xl shadow-2xl p-6 w-full max-w-md" onClick={e => e.stopPropagation()}>
             <div className="flex items-center justify-between mb-5">
-              <h2 className="text-lg font-bold text-gray-900">{editing ? 'Επεξεργασία Slide' : 'Νέο Slide'}</h2>
-              <button onClick={() => setShowModal(false)} className="p-1.5 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg transition-colors">
+              <h2 className="text-lg font-bold text-gray-900">Ρυθμίσεις Slideshow</h2>
+              <button onClick={() => setShowSettings(false)} className="p-1.5 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg transition-colors">
                 <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12"/></svg>
               </button>
             </div>
 
             <div className="space-y-4">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Εικόνα</label>
-                {imageUrl && <img src={imageUrl} alt="" className="w-full h-40 object-cover rounded-xl border border-gray-200 mb-3" />}
-                <div className="flex flex-col sm:flex-row gap-3">
-                  <label className="inline-flex items-center justify-center gap-2 px-4 py-2.5 bg-gray-100 text-gray-700 text-sm font-medium rounded-xl hover:bg-gray-200 cursor-pointer transition-colors">
-                    {uploading ? 'Ανέβασμα...' : 'Ανέβασμα εικόνας'}
-                    <input type="file" accept="image/*" onChange={handleUpload} className="hidden" disabled={uploading} />
-                  </label>
-                  <input
-                    type="text"
-                    value={imageUrl}
-                    onChange={e => setImageUrl(e.target.value)}
-                    className="flex-1 px-4 py-2.5 rounded-xl border border-gray-300 focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none text-sm"
-                    placeholder="ή URL εικόνας"
-                  />
-                </div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Διάρκεια κάθε slide (δευτερόλεπτα)</label>
+                <input
+                  type="number"
+                  min={1}
+                  max={60}
+                  value={durationSec}
+                  onChange={e => setDurationSec(Number(e.target.value))}
+                  className="w-full px-4 py-2.5 rounded-xl border border-gray-300 focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none text-sm"
+                />
               </div>
-
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Διάρκεια (δευτερόλεπτα)</label>
-                  <input
-                    type="number"
-                    min={1}
-                    max={60}
-                    value={durationSec}
-                    onChange={e => setDurationSec(Number(e.target.value))}
-                    className="w-full px-4 py-2.5 rounded-xl border border-gray-300 focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none text-sm"
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Εφέ μετάβασης</label>
-                  <select
-                    value={effect}
-                    onChange={e => setEffect(e.target.value)}
-                    className="w-full px-4 py-2.5 rounded-xl border border-gray-300 focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none text-sm"
-                  >
-                    {EFFECTS.map(e => <option key={e.value} value={e.value}>{e.label}</option>)}
-                  </select>
-                </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Εφέ μετάβασης</label>
+                <select
+                  value={effect}
+                  onChange={e => setEffect(e.target.value)}
+                  className="w-full px-4 py-2.5 rounded-xl border border-gray-300 focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none text-sm"
+                >
+                  {EFFECTS.map(e => <option key={e.value} value={e.value}>{e.label}</option>)}
+                </select>
+                <p className="text-xs text-gray-400 mt-2">Το «Όλα» εναλλάσσει τα τρία εφέ με τη σειρά (crossfade, ολίσθηση, zoom) και επαναλαμβάνεται.</p>
               </div>
-
-              <label className="flex items-center gap-2 cursor-pointer">
-                <input type="checkbox" checked={isActive} onChange={e => setIsActive(e.target.checked)} className="w-4 h-4 rounded border-gray-300 text-primary focus:ring-primary" />
-                <span className="text-sm text-gray-700">Ενεργό</span>
-              </label>
             </div>
 
             <div className="flex gap-3 mt-6">
-              <button onClick={handleSave} className="flex-1 px-4 py-2.5 bg-primary text-white text-sm font-semibold rounded-xl hover:bg-primary-light transition-colors">
-                {editing ? 'Ενημέρωση' : 'Προσθήκη'}
+              <button onClick={handleSaveSettings} disabled={savingSettings} className="flex-1 px-4 py-2.5 bg-primary text-white text-sm font-semibold rounded-xl hover:bg-primary-light transition-colors disabled:opacity-50">
+                {savingSettings ? 'Αποθήκευση...' : 'Αποθήκευση'}
               </button>
-              <button onClick={() => setShowModal(false)} className="px-4 py-2.5 bg-gray-100 text-gray-700 text-sm font-medium rounded-xl hover:bg-gray-200 transition-colors">
+              <button onClick={() => setShowSettings(false)} className="px-4 py-2.5 bg-gray-100 text-gray-700 text-sm font-medium rounded-xl hover:bg-gray-200 transition-colors">
                 Ακύρωση
               </button>
             </div>
