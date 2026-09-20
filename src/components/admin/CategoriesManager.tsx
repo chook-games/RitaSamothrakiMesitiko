@@ -10,7 +10,7 @@ export default function CategoriesManager({ categories, onRefresh }: {
   const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' } | null>(null)
   const [newName, setNewName] = useState('')
   const [newNameEn, setNewNameEn] = useState('')
-  const [newType, setNewType] = useState<'agora' | 'enoikiasi' | 'poulithike'>('agora')
+  const [newType, setNewType] = useState<'agora' | 'enoikiasi'>('agora')
   const [newSlug, setNewSlug] = useState('')
   const [editing, setEditing] = useState<Category | null>(null)
   const [showModal, setShowModal] = useState(false)
@@ -64,8 +64,9 @@ export default function CategoriesManager({ categories, onRefresh }: {
     setNewSlug('')
   }
 
-  const typeLabels: Record<string, string> = { agora: 'Αγορά', enoikiasi: 'Ενοικίαση', poulithike: 'Πουλήθηκε' }
-  const grouped = categories.reduce((acc, cat) => {
+  const typeLabels: Record<string, string> = { agora: 'Αγορά', enoikiasi: 'Ενοικίαση' }
+  const visibleCategories = categories.filter(c => c.type !== 'poulithike')
+  const grouped = visibleCategories.reduce((acc, cat) => {
     if (!acc[cat.type]) acc[cat.type] = []
     acc[cat.type].push(cat)
     return acc
@@ -138,12 +139,11 @@ export default function CategoriesManager({ categories, onRefresh }: {
                 <label className="block text-sm font-medium text-gray-700 mb-1">Τύπος</label>
                 <select
                   value={newType}
-                  onChange={e => setNewType(e.target.value as 'agora' | 'enoikiasi' | 'poulithike')}
+                  onChange={e => setNewType(e.target.value as 'agora' | 'enoikiasi')}
                   className="w-full px-4 py-2.5 rounded-xl border border-gray-300 focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none text-sm"
                 >
                   <option value="agora">Αγορά</option>
                   <option value="enoikiasi">Ενοικίαση</option>
-                  <option value="poulithike">Πουλήθηκε</option>
                 </select>
               </div>
             </div>

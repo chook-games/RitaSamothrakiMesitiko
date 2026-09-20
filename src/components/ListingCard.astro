@@ -43,11 +43,6 @@ const categoryName = listing.category ? pick(lang, listing.category.name_el, lis
 
     <!-- Badges -->
     <div class="absolute top-3 left-3 flex flex-col gap-2">
-      {listing.status === 'sold' && (
-        <span class="px-3 py-1 bg-sold text-white text-xs font-semibold rounded-full shadow-sm">
-          {t(lang, 'card.sold')}
-        </span>
-      )}
       {listing.is_featured && (
         <span class="px-3 py-1 bg-accent text-primary-dark text-xs font-semibold rounded-full shadow-sm">
           {t(lang, 'card.featured')}

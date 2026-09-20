@@ -9,7 +9,7 @@ interface Props {
   onDone: () => void
 }
 
-type PropertyType = 'agora' | 'enoikiasi' | 'poulithike'
+type PropertyType = 'agora' | 'enoikiasi'
 
 interface ImportRow {
   external_id?: string
@@ -31,7 +31,6 @@ interface ImportRow {
 const TYPE_LABELS: Record<PropertyType, string> = {
   agora: 'Αγορά',
   enoikiasi: 'Ενοικίαση',
-  poulithike: 'Πουλήθηκε',
 }
 
 const HEADER_ALIASES: Record<string, keyof ImportRow> = {
@@ -143,7 +142,6 @@ function normType(value?: string): PropertyType | undefined {
   const v = value.trim().toLowerCase()
   if (['agora', 'buy', 'sale', 'πωληση', 'πώληση', 'αγορα', 'αγορά'].includes(v)) return 'agora'
   if (['enoikiasi', 'rent', 'rental', 'ενοικιαση', 'ενοικίαση'].includes(v)) return 'enoikiasi'
-  if (['poulithike', 'sold', 'πουληθηκε', 'πουλήθηκε'].includes(v)) return 'poulithike'
   return undefined
 }
 
@@ -152,7 +150,6 @@ export default function BulkImport({ categories, phoneDefault, onDone }: Props) 
   const [format, setFormat] = useState<'auto' | 'json' | 'csv'>('auto')
   const [defaultType, setDefaultType] = useState<PropertyType>('agora')
   const [defaultCategoryId, setDefaultCategoryId] = useState('')
-  const [defaultStatus, setDefaultStatus] = useState<'active' | 'sold'>('active')
   const [autoTranslate, setAutoTranslate] = useState(true)
   const [uploadImages, setUploadImages] = useState(true)
   const [rows, setRows] = useState<ImportRow[] | null>(null)
@@ -318,9 +315,6 @@ export default function BulkImport({ categories, phoneDefault, onDone }: Props) 
 
         const priceValue = parseFloat(String(row.price ?? '0').replace(/[^\d.,-]/g, '').replace(',', '.')) || 0
         const featured = row.is_featured === true || ['true', '1', 'ναι', 'yes'].includes(String(row.is_featured ?? '').toLowerCase())
-        const status = row.status && ['sold', 'πουληθηκε', 'πουλήθηκε'].includes(String(row.status).toLowerCase())
-          ? 'sold'
-          : (row.status && ['active', 'ενεργο'].includes(String(row.status).toLowerCase()) ? 'active' : defaultStatus)
 
         const { data: inserted, error } = await supabase
           .from('listings')
@@ -335,7 +329,7 @@ export default function BulkImport({ categories, phoneDefault, onDone }: Props) 
             phone: String(row.phone ?? '').trim() || phoneDefault,
             youtube_url: String(row.youtube_url ?? '').trim() || null,
             is_featured: featured,
-            status,
+            status: 'active',
             source: 'import',
             external_id: externalId,
           })
@@ -370,8 +364,8 @@ export default function BulkImport({ categories, phoneDefault, onDone }: Props) 
   }
 
   const downloadTemplate = () => {
-    const header = 'external_id,code,title,description,price,type,category,phone,images,youtube_url,is_featured,status'
-    const example = 'xe-12345,RS-001,"Διαμέρισμα 80τμ, κέντρο","Περιγραφή...",150000,agora,diamerisma,6970000000,"https://.../1.jpg|https://.../2.jpg",,false,active'
+    const header = 'external_id,code,title,description,price,type,category,phone,images,youtube_url,is_featured'
+    const example = 'xe-12345,RS-001,"Διαμέρισμα 80τμ, κέντρο","Περιγραφή...",150000,agora,diamerisma,6970000000,"https://.../1.jpg|https://.../2.jpg",,false'
     const blob = new Blob([`${header}\n${example}\n`], { type: 'text/csv;charset=utf-8' })
     const url = URL.createObjectURL(blob)
     const a = document.createElement('a')
@@ -403,7 +397,7 @@ export default function BulkImport({ categories, phoneDefault, onDone }: Props) 
           placeholder={'[{"title":"Διαμέρισμα 80τμ","price":150000,"type":"agora","category":"diamerisma","description":"...","images":["https://..."]}]'}
         />
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mt-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 mt-4">
           <div>
             <label className="block text-xs font-medium text-gray-500 mb-1">Μορφή</label>
             <select value={format} onChange={e => setFormat(e.target.value as 'auto' | 'json' | 'csv')} className="w-full px-3 py-2.5 rounded-xl border border-gray-300 text-sm outline-none">
@@ -431,13 +425,6 @@ export default function BulkImport({ categories, phoneDefault, onDone }: Props) 
               {categoryOptions.map(c => (
                 <option key={c.id} value={c.id}>{c.name_el}</option>
               ))}
-            </select>
-          </div>
-          <div>
-            <label className="block text-xs font-medium text-gray-500 mb-1">Κατάσταση</label>
-            <select value={defaultStatus} onChange={e => setDefaultStatus(e.target.value as 'active' | 'sold')} className="w-full px-3 py-2.5 rounded-xl border border-gray-300 text-sm outline-none">
-              <option value="active">Ενεργό</option>
-              <option value="sold">Πουλήθηκε</option>
             </select>
           </div>
         </div>

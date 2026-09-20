@@ -22,20 +22,20 @@
 
 ### Δημόσιο Site
 - **Αρχική**: Hero slideshow με φωτογραφίες, Προτεινόμενες αγγελίες, Κατηγορίες, Πρόσφατες αγγελίες
-- **Αγορά / Ενοικίαση / Πουλήθηκε**: Σελίδες με υποκατηγορίες και φίλτρα
+- **Αγορά / Ενοικίαση**: Σελίδες με υποκατηγορίες και φίλτρα
 - **Λεπτομέρεια αγγελίας**: Photo gallery, περιγραφή, τιμή, ενσωματωμένο YouTube video, τηλέφωνο
 - **Το Γραφείο**: Πληροφορίες, λογότυπο, χάρτης, social links
 - **Δύο γλώσσες**: Ελληνικά (default) & Αγγλικά στο `/en/` με language switcher
-- **Πλήρως responsive**: Mobile-first, hamburger menu, dropdowns
+- **Πλήρως responsive**: Mobile-first, οριζόντιο μενού στο κινητό, dropdowns
 
 ### Admin Panel (`/admin`)
 - **Login** με email/password (Supabase Auth)
 - **Dashboard**: Στατιστικά, πρόσφατες αγγελίες
-- **Αγγελίες**: CRUD, upload φωτογραφιών (drag & drop), YouTube URL, "Προτεινόμενο" toggle, "Πουλήθηκε" status, αγγλικά πεδία + αυτόματη μετάφραση
+- **Αγγελίες**: CRUD, upload φωτογραφιών (drag & drop), YouTube URL, "Προτεινόμενο" toggle, αγγλικά πεδία + αυτόματη μετάφραση
 - **Μαζική Εισαγωγή**: Εισαγωγή πολλών αγγελιών από JSON/CSV (π.χ. από xe.gr) με φωτογραφίες
 - **Slideshow**: Ανέβασμα πολλών εικόνων μαζί, σειρά, ενεργό/ανενεργό, ρυθμίσεις διάρκειας & εφέ (crossfade/ολίσθηση/zoom/όλα)
-- **Κατηγορίες**: Add/edit/delete (Αγορά, Ενοικίαση, Πουλήθηκε) με ελληνικό & αγγλικό όνομα
-- **Ρυθμίσεις Γραφείου**: Όνομα, λογότυπο + μέγεθος λογότυπου, πολλαπλά τηλέφωνα, email, social links (Facebook/Instagram/YouTube/TikTok) Ελληνικά/Αγγλικά
+- **Κατηγορίες**: Add/edit/delete (Αγορά, Ενοικίαση) με ελληνικό & αγγλικό όνομα
+- **Ρυθμίσεις Γραφείου**: Όνομα, λογότυπο + μέγεθος λογότυπου, πολλαπλά τηλέφωνα (σταθερό/κινητό), email, social links (Facebook/Instagram/YouTube/TikTok) Ελληνικά/Αγγλικά
 
 ## 🔐 Admin Login
 
@@ -58,6 +58,7 @@ Tables: `office_settings`, `categories`, `listings`, `listing_images`
 - Hero slideshow + logo size: `supabase/migrations/20260920010000_hero_slides.sql`
 - Hero slideshow settings (duration/effect): `supabase/migrations/20260920020000_hero_settings.sql`
 - Multiple phone numbers: `supabase/migrations/20260920030000_phones.sql`
+- Phone types (mobile/landline): `supabase/migrations/20260920040000_phone_types.sql`
 
 ## 📥 Μαζική Εισαγωγή Αγγελιών (xe.gr / Χρυσή Ευκαιρία)
 

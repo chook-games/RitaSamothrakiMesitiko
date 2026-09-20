@@ -84,13 +84,6 @@ const typeSlug = listing.category ? (listing.category.type === 'poulithike' ? 'p
             {mainImage ? (
               <div class="relative aspect-[16/9]">
                 <img src={mainImage} alt={listingTitle} class="w-full h-full object-cover" />
-                {listing.status === 'sold' && (
-                  <div class="absolute inset-0 bg-black/40 flex items-center justify-center">
-                    <span class="px-6 py-3 bg-sold text-white text-lg font-bold rounded-xl shadow-lg rotate-[-15deg]">
-                      {t(lang, 'card.sold').toUpperCase()}
-                    </span>
-                  </div>
-                )}
               </div>
             ) : (
               <div class="aspect-[16/9] bg-gray-100 flex items-center justify-center">
@@ -152,9 +145,6 @@ const typeSlug = listing.category ? (listing.category.type === 'poulithike' ? 'p
             <div class="flex items-center gap-2 mb-4">
               {listing.code && (
                 <span class="text-sm text-gray-400 font-mono">{t(lang, 'detail.code')}: #{listing.code}</span>
-              )}
-              {listing.status === 'sold' && (
-                <span class="px-3 py-1 bg-sold/10 text-sold text-xs font-semibold rounded-full">{t(lang, 'card.sold')}</span>
               )}
               {listing.is_featured && (
                 <span class="px-3 py-1 bg-accent/10 text-accent-dark text-xs font-semibold rounded-full">{t(lang, 'card.featured')}</span>

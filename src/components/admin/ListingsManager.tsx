@@ -21,13 +21,6 @@ export default function ListingsManager({ listings, categories, phoneDefault, on
     else { setToast({ message: 'Η αγγελία διαγράφηκε!', type: 'success' }); onRefresh() }
   }
 
-  const handleToggleSold = async (listing: Listing) => {
-    const newStatus = listing.status === 'sold' ? 'active' : 'sold'
-    const { error } = await supabase.from('listings').update({ status: newStatus }).eq('id', listing.id)
-    if (error) setToast({ message: 'Σφάλμα: ' + error.message, type: 'error' })
-    else { setToast({ message: `Η αγγελία ${newStatus === 'sold' ? 'σημαδεύτηκε ως πουλημένη' : 'ενεργοποιήθηκε'}!`, type: 'success' }); onRefresh() }
-  }
-
   return (
     <div className="p-6 md:p-8">
       {toast && <Toast message={toast.message} type={toast.type} onClose={() => setToast(null)} />}
@@ -64,7 +57,6 @@ export default function ListingsManager({ listings, categories, phoneDefault, on
                 <th className="px-5 py-3">Τιμή</th>
                 <th className="px-5 py-3">Τηλέφωνο</th>
                 <th className="px-5 py-3">Προτ.</th>
-                <th className="px-5 py-3">Status</th>
                 <th className="px-5 py-3">Ενέργειες</th>
               </tr>
             </thead>
@@ -91,13 +83,6 @@ export default function ListingsManager({ listings, categories, phoneDefault, on
                     <td className="px-5 py-3 text-gray-500">{listing.phone}</td>
                     <td className="px-5 py-3">{listing.is_featured ? '⭐' : '-'}</td>
                     <td className="px-5 py-3">
-                      {listing.status === 'sold' ? (
-                        <span className="px-2 py-1 bg-red-100 text-red-700 text-xs rounded-full font-medium">Πουλήθηκε</span>
-                      ) : (
-                        <span className="px-2 py-1 bg-green-100 text-green-700 text-xs rounded-full font-medium">Ενεργό</span>
-                      )}
-                    </td>
-                    <td className="px-5 py-3">
                       <div className="flex items-center gap-2">
                         <button
                           onClick={() => { setEditingListing(listing); setShowForm(true) }}
@@ -105,13 +90,6 @@ export default function ListingsManager({ listings, categories, phoneDefault, on
                           title="Επεξεργασία"
                         >
                           <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/></svg>
-                        </button>
-                        <button
-                          onClick={() => handleToggleSold(listing)}
-                          className={`p-1.5 rounded-lg transition-colors ${listing.status === 'sold' ? 'text-green-400 hover:text-green-600 hover:bg-green-50' : 'text-red-400 hover:text-red-600 hover:bg-red-50'}`}
-                          title={listing.status === 'sold' ? 'Επαναφορά σε ενεργό' : 'Σήμανση ως πουλημένο'}
-                        >
-                          <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d={listing.status === 'sold' ? 'M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15' : 'M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z'}/></svg>
                         </button>
                         <button
                           onClick={() => handleDelete(listing.id)}
@@ -126,7 +104,7 @@ export default function ListingsManager({ listings, categories, phoneDefault, on
                 )
               })}
               {listings.length === 0 && (
-                <tr><td colSpan={8} className="px-5 py-12 text-center text-gray-400">Δεν υπάρχουν αγγελίες. Πατήστε "Νέα Αγγελία" για να ξεκινήσετε.</td></tr>
+                <tr><td colSpan={7} className="px-5 py-12 text-center text-gray-400">Δεν υπάρχουν αγγελίες. Πατήστε "Νέα Αγγελία" για να ξεκινήσετε.</td></tr>
               )}
             </tbody>
           </table>

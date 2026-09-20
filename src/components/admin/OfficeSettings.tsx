@@ -3,17 +3,27 @@ import { supabase } from '../../lib/supabase'
 import type { OfficeSettings as OfficeSettingsType } from '../../lib/supabase'
 import { Toast } from './shared'
 
+type PhoneDraft = { number: string; type: 'mobile' | 'landline' }
+
+function initialPhoneDrafts(settings: OfficeSettingsType | null): PhoneDraft[] {
+  const raw = settings?.phones
+  if (Array.isArray(raw) && raw.length > 0) {
+    const list = raw.map(item => {
+      if (typeof item === 'string') return { number: item, type: 'landline' as const }
+      return { number: item?.number || '', type: item?.type === 'mobile' ? ('mobile' as const) : ('landline' as const) }
+    })
+    if (list.some(p => p.number.trim())) return list
+  }
+  return settings?.phone ? [{ number: settings.phone, type: 'landline' }] : [{ number: '', type: 'landline' }]
+}
+
 export default function OfficeSettings({ settings: initialSettings, onRefresh }: {
   settings: OfficeSettingsType | null
   onRefresh: () => void
 }) {
   const [name, setName] = useState(initialSettings?.name || '')
   const [nameEn, setNameEn] = useState(initialSettings?.name_en || '')
-  const [phones, setPhones] = useState<string[]>(
-    initialSettings?.phones && initialSettings.phones.length > 0
-      ? initialSettings.phones
-      : (initialSettings?.phone ? [initialSettings.phone] : [''])
-  )
+  const [phones, setPhones] = useState<PhoneDraft[]>(initialPhoneDrafts(initialSettings))
   const [email, setEmail] = useState(initialSettings?.email || '')
   const [address, setAddress] = useState(initialSettings?.address || '')
   const [aboutText, setAboutText] = useState(initialSettings?.about_text || '')
@@ -27,20 +37,23 @@ export default function OfficeSettings({ settings: initialSettings, onRefresh }:
   const [logoUrl, setLogoUrl] = useState(initialSettings?.logo_url || '')
   const [logoHeight, setLogoHeight] = useState(initialSettings?.logo_height || 40)
 
-  const updatePhone = (index: number, value: string) => {
-    setPhones(prev => prev.map((p, i) => (i === index ? value : p)))
+  const updatePhone = (index: number, number: string) => {
+    setPhones(prev => prev.map((p, i) => (i === index ? { ...p, number } : p)))
   }
-  const addPhone = () => setPhones(prev => [...prev, ''])
+  const updatePhoneType = (index: number, type: 'mobile' | 'landline') => {
+    setPhones(prev => prev.map((p, i) => (i === index ? { ...p, type } : p)))
+  }
+  const addPhone = () => setPhones(prev => [...prev, { number: '', type: 'landline' }])
   const removePhone = (index: number) => {
-    setPhones(prev => (prev.length <= 1 ? [''] : prev.filter((_, i) => i !== index)))
+    setPhones(prev => (prev.length <= 1 ? [{ number: '', type: 'landline' }] : prev.filter((_, i) => i !== index)))
   }
 
   const handleSave = async () => {
-    const cleanPhones = phones.map(p => p.trim()).filter(Boolean)
+    const cleanPhones = phones.map(p => ({ number: p.number.trim(), type: p.type })).filter(p => p.number)
     const data = {
       name,
       name_en: nameEn || null,
-      phone: cleanPhones[0] || '',
+      phone: cleanPhones[0]?.number || '',
       phones: cleanPhones,
       email,
       address,
@@ -124,11 +137,19 @@ export default function OfficeSettings({ settings: initialSettings, onRefresh }:
                     <div key={i} className="flex items-center gap-2">
                       <input
                         type="text"
-                        value={p}
+                        value={p.number}
                         onChange={e => updatePhone(i, e.target.value)}
                         className="flex-1 px-4 py-2.5 rounded-xl border border-gray-300 focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none text-sm"
                         placeholder="210 0000 000"
                       />
+                      <select
+                        value={p.type}
+                        onChange={e => updatePhoneType(i, e.target.value as 'mobile' | 'landline')}
+                        className="px-3 py-2.5 rounded-xl border border-gray-300 focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none text-sm"
+                      >
+                        <option value="landline">Σταθερό</option>
+                        <option value="mobile">Κινητό</option>
+                      </select>
                       <button
                         type="button"
                         onClick={() => removePhone(i)}

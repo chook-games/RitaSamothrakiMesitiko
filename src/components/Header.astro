@@ -1,6 +1,7 @@
 ---
 import { getCategories, getOfficeSettings, officePhones } from '../lib/supabase'
 import type { Category } from '../lib/supabase'
+import PhoneIcon from './PhoneIcon.astro'
 import { t, localizePath, withBase, pick, type Lang } from '../i18n/utils'
 
 export interface Props {
@@ -13,7 +14,6 @@ const categories = await getCategories()
 const settings = await getOfficeSettings()
 
 const phones = officePhones(settings)
-
 const logoHeight = Number(settings?.logo_height) || 40
 
 const agoraCategories = categories.filter(c => c.type === 'agora')
@@ -28,6 +28,13 @@ if (!pathNoBase.startsWith('/')) pathNoBase = '/' + pathNoBase
 const pathNoLang = pathNoBase.replace(/^\/en(\/|$)/, '/')
 const elHref = withBase(pathNoLang)
 const enHref = withBase(`/en${pathNoLang === '/' ? '' : pathNoLang}`)
+
+const navItems = [
+  { href: localizePath('/', lang), label: t(lang, 'nav.home') },
+  { href: localizePath('/agora', lang), label: t(lang, 'nav.agora') },
+  { href: localizePath('/enoikiasi', lang), label: t(lang, 'nav.enoikiasi') },
+  { href: localizePath('/grafeio', lang), label: t(lang, 'nav.grafeio') },
+]
 ---
 
 <header class="bg-white/95 backdrop-blur-md shadow-sm sticky top-0 z-50">
@@ -96,152 +103,92 @@ const enHref = withBase(`/en${pathNoLang === '/' ? '' : pathNoLang}`)
           </div>
         </div>
 
-        <a href={localizePath('/poulithike', lang)} class="px-4 py-2 text-sm font-medium text-gray-700 hover:text-primary hover:bg-gray-50 rounded-lg transition-colors">
-          {t(lang, 'nav.poulithike')}
-        </a>
-
         <a href={localizePath('/grafeio', lang)} class="px-4 py-2 text-sm font-medium text-gray-700 hover:text-primary hover:bg-gray-50 rounded-lg transition-colors">
           {t(lang, 'nav.grafeio')}
         </a>
       </nav>
 
+      <!-- Right actions: language + phone -->
       <div class="flex items-center gap-2">
         <!-- Language switcher -->
-        <div class="hidden lg:flex items-center rounded-xl border border-gray-200 p-0.5 text-xs font-semibold" aria-label={t(lang, 'nav.language')}>
+        <div class="flex items-center rounded-xl border border-gray-200 p-0.5 text-xs font-semibold" aria-label={t(lang, 'nav.language')}>
           <a href={elHref} class={`px-2.5 py-1.5 rounded-lg transition-colors ${lang === 'el' ? 'bg-primary text-white' : 'text-gray-500 hover:text-primary'}`}>EL</a>
           <a href={enHref} class={`px-2.5 py-1.5 rounded-lg transition-colors ${lang === 'en' ? 'bg-primary text-white' : 'text-gray-500 hover:text-primary'}`}>EN</a>
         </div>
 
-        <!-- Contact Buttons Desktop -->
-        {(phones.length > 0 ? phones : ['210 0000 000']).map((ph, i) => (
-          <a
-            id={i === 0 ? 'header-phone-link' : undefined}
-            href={`tel:${phones.length > 0 ? ph : '2100000000'}`}
-            class="hidden lg:inline-flex items-center gap-2 px-5 py-2.5 bg-primary text-white text-sm font-medium rounded-xl hover:bg-primary-light transition-colors shadow-sm"
+        <!-- Phone button + dropdown -->
+        <div class="relative">
+          <button
+            id="phone-menu-btn"
+            type="button"
+            class="inline-flex items-center justify-center w-10 h-10 rounded-xl bg-primary text-white hover:bg-primary-light transition-colors shadow-sm"
+            aria-label="Τηλέφωνα"
           >
-            <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z"/></svg>
-            <span id={i === 0 ? 'header-phone-text' : undefined}>{ph}</span>
-          </a>
-        ))}
-
-        <!-- Mobile menu button -->
-        <button id="mobile-menu-btn" class="lg:hidden p-2 rounded-lg text-gray-600 hover:text-primary hover:bg-gray-100 transition-colors" aria-label={t(lang, 'nav.menu')}>
-          <svg class="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path id="menu-icon-open" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"/>
-            <path id="menu-icon-close" class="hidden" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
-          </svg>
-        </button>
+            <PhoneIcon type="landline" class="w-5 h-5" />
+          </button>
+          <div id="phone-menu" class="hidden absolute right-0 top-full mt-2 min-w-[200px] bg-white rounded-xl shadow-xl border border-gray-100 py-2 z-50">
+            {phones.map(ph => (
+              <a href={`tel:${ph.number}`} class="flex items-center gap-2 px-4 py-2.5 text-sm text-gray-700 hover:text-primary hover:bg-gray-50 transition-colors">
+                <PhoneIcon type={ph.type} class="w-4 h-4 text-primary" />
+                <span>{ph.number}</span>
+              </a>
+            ))}
+            {phones.length === 0 && (
+              <div class="px-4 py-2.5 text-sm text-gray-400">{t(lang, 'office.phone')}: —</div>
+            )}
+          </div>
+        </div>
       </div>
     </div>
-  </div>
 
-  <!-- Mobile Menu -->
-  <div id="mobile-menu" class="lg:hidden max-h-0 overflow-hidden transition-all duration-300">
-    <div class="px-4 py-3 space-y-1 border-t border-gray-100">
-      <a href={localizePath('/', lang)} class="block px-3 py-2.5 rounded-lg text-sm font-medium text-gray-700 hover:text-primary hover:bg-gray-50">
-        {t(lang, 'nav.home')}
-      </a>
-
-      <!-- Mobile Κατηγορίες Αγορά -->
-      <div class="border-t border-gray-50 pt-1">
-        <button class="mobile-submenu-btn w-full flex items-center justify-between px-3 py-2.5 rounded-lg text-sm font-medium text-gray-700 hover:text-primary hover:bg-gray-50" data-target="submenu-agora">
-          <span>{t(lang, 'nav.agora')}</span>
-          <svg class="w-4 h-4 transition-transform" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
-        </button>
-        <div id="submenu-agora" class="hidden pl-4 pb-2">
-          <a href={localizePath('/agora', lang)} class="block px-3 py-2 text-sm text-gray-600 hover:text-primary rounded-lg">{t(lang, 'nav.allListings')}</a>
-          {agoraCategories.filter(c => !c.parent_id).map(cat => (
-            <a href={localizePath(`/agora/${cat.slug}`, lang)} class="block px-3 py-2 text-sm text-gray-600 hover:text-primary rounded-lg">{catName(cat)}</a>
-          ))}
-        </div>
-      </div>
-
-      <!-- Mobile Κατηγορίες Ενοικίαση -->
-      <div class="border-t border-gray-50 pt-1">
-        <button class="mobile-submenu-btn w-full flex items-center justify-between px-3 py-2.5 rounded-lg text-sm font-medium text-gray-700 hover:text-primary hover:bg-gray-50" data-target="submenu-enoikiasi">
-          <span>{t(lang, 'nav.enoikiasi')}</span>
-          <svg class="w-4 h-4 transition-transform" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
-        </button>
-        <div id="submenu-enoikiasi" class="hidden pl-4 pb-2">
-          <a href={localizePath('/enoikiasi', lang)} class="block px-3 py-2 text-sm text-gray-600 hover:text-primary rounded-lg">{t(lang, 'nav.allListings')}</a>
-          {enoikiasiCategories.filter(c => !c.parent_id).map(cat => (
-            <a href={localizePath(`/enoikiasi/${cat.slug}`, lang)} class="block px-3 py-2 text-sm text-gray-600 hover:text-primary rounded-lg">{catName(cat)}</a>
-          ))}
-        </div>
-      </div>
-
-      <a href={localizePath('/poulithike', lang)} class="block px-3 py-2.5 rounded-lg text-sm font-medium text-gray-700 hover:text-primary hover:bg-gray-50 border-t border-gray-50">
-        {t(lang, 'nav.poulithike')}
-      </a>
-      <a href={localizePath('/grafeio', lang)} class="block px-3 py-2.5 rounded-lg text-sm font-medium text-gray-700 hover:text-primary hover:bg-gray-50">
-        {t(lang, 'nav.grafeio')}
-      </a>
-
-      <!-- Mobile language switcher -->
-      <div class="border-t border-gray-100 pt-3 mt-2 flex items-center gap-2">
-        <a href={elHref} class={`flex-1 text-center px-3 py-2 text-sm font-semibold rounded-xl border ${lang === 'el' ? 'bg-primary text-white border-primary' : 'text-gray-600 border-gray-200'}`}>Ελληνικά</a>
-        <a href={enHref} class={`flex-1 text-center px-3 py-2 text-sm font-semibold rounded-xl border ${lang === 'en' ? 'bg-primary text-white border-primary' : 'text-gray-600 border-gray-200'}`}>English</a>
-      </div>
-
-      <div class="border-t border-gray-100 pt-3 mt-2 space-y-2">
-        {(phones.length > 0 ? phones : ['210 0000 000']).map((ph, i) => (
-          <a
-            id={i === 0 ? 'mobile-phone-link' : undefined}
-            href={`tel:${phones.length > 0 ? ph : '2100000000'}`}
-            class="flex items-center justify-center gap-2 px-4 py-3 bg-primary text-white text-sm font-medium rounded-xl hover:bg-primary-light transition-colors"
-          >
-            <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z"/></svg>
-            <span id={i === 0 ? 'mobile-phone-text' : undefined}>{ph}</span>
+    <!-- Mobile navigation bar -->
+    <nav class="lg:hidden border-t border-gray-100 -mx-4 px-4">
+      <div class="flex items-center gap-1 overflow-x-auto py-2 whitespace-nowrap">
+        {navItems.map(item => (
+          <a href={item.href} class="px-3.5 py-2 rounded-lg text-sm font-medium text-gray-700 hover:text-primary hover:bg-gray-50 transition-colors flex-shrink-0">
+            {item.label}
           </a>
         ))}
       </div>
-    </div>
+    </nav>
   </div>
 </header>
 
 <script>
-  // Mobile menu toggle
-  const menuBtn = document.getElementById('mobile-menu-btn');
-  const mobileMenu = document.getElementById('mobile-menu');
-  const iconOpen = document.getElementById('menu-icon-open');
-  const iconClose = document.getElementById('menu-icon-close');
+  // Phone dropdown
+  const phoneBtn = document.getElementById('phone-menu-btn');
+  const phoneMenu = document.getElementById('phone-menu');
+  phoneBtn?.addEventListener('click', (e) => {
+    e.stopPropagation();
+    phoneMenu?.classList.toggle('hidden');
+  });
+  document.addEventListener('click', (e) => {
+    if (!phoneMenu || phoneMenu.classList.contains('hidden')) return;
+    if (!phoneMenu.contains(e.target) && e.target !== phoneBtn) phoneMenu.classList.add('hidden');
+  });
 
-  const isMenuOpen = () => mobileMenu?.classList.contains('max-h-[600px]');
+  // Live office settings
+  const esc = (s) => String(s)
+    .replace(/&/g, '&amp;')
+    .replace(/"/g, '&quot;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;');
 
-  const setMenu = (open) => {
-    if (!mobileMenu) return;
-    if (open) {
-      mobileMenu.classList.remove('max-h-0');
-      mobileMenu.classList.add('max-h-[600px]', 'overflow-y-auto');
-      iconOpen?.classList.add('hidden');
-      iconClose?.classList.remove('hidden');
-    } else {
-      mobileMenu.classList.remove('max-h-[600px]', 'overflow-y-auto');
-      mobileMenu.classList.add('max-h-0');
-      iconOpen?.classList.remove('hidden');
-      iconClose?.classList.add('hidden');
+  const mobileIcon = '<svg class="w-4 h-4 text-primary" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 2h8a2 2 0 012 2v16a2 2 0 01-2 2H8a2 2 0 01-2-2V4a2 2 0 012-2z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 18h2"/></svg>';
+  const landIcon = '<svg class="w-4 h-4 text-primary" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z"/></svg>';
+
+  const renderPhones = (list) => {
+    if (!phoneMenu) return;
+    if (!list.length) {
+      phoneMenu.innerHTML = '<div class="px-4 py-2.5 text-sm text-gray-400">—</div>';
+      return;
     }
+    phoneMenu.innerHTML = list.map(p => {
+      const icon = p.type === 'mobile' ? mobileIcon : landIcon;
+      return `<a href="tel:${esc(p.number)}" class="flex items-center gap-2 px-4 py-2.5 text-sm text-gray-700 hover:text-primary hover:bg-gray-50 transition-colors">${icon}<span>${esc(p.number)}</span></a>`;
+    }).join('');
   };
 
-  menuBtn?.addEventListener('click', () => setMenu(!isMenuOpen()));
-
-  // Close the mobile menu after tapping a link
-  mobileMenu?.querySelectorAll('a').forEach(link => {
-    link.addEventListener('click', () => setMenu(false));
-  });
-
-  // Mobile submenu toggle
-  document.querySelectorAll('.mobile-submenu-btn').forEach(btn => {
-    btn.addEventListener('click', () => {
-      const target = document.getElementById(btn.dataset.target);
-      const arrow = btn.querySelector('svg');
-      if (!target) return;
-      target.classList.toggle('hidden');
-      arrow?.classList.toggle('rotate-180');
-    });
-  });
-
-  // Live office settings — fetch latest from Supabase so admin changes appear without redeploy
   (async () => {
     try {
       const SUPABASE_URL = import.meta.env.PUBLIC_SUPABASE_URL;
@@ -271,16 +218,18 @@ const enHref = withBase(`/en${pathNoLang === '/' ? '' : pathNoLang}`)
         const isEn = document.documentElement.lang === 'en';
         if (nameEl) nameEl.textContent = isEn ? (s.name_en || s.name) : s.name;
       }
-      if (s.phone) {
-        const pt = document.getElementById('header-phone-text');
-        const mpt = document.getElementById('mobile-phone-text');
-        const pl = document.getElementById('header-phone-link');
-        const mpl = document.getElementById('mobile-phone-link');
-        if (pt) pt.textContent = s.phone;
-        if (mpt) mpt.textContent = s.phone;
-        if (pl) pl.href = `tel:${s.phone}`;
-        if (mpl) mpl.href = `tel:${s.phone}`;
+
+      // Build the phones list from live data
+      let list = [];
+      if (Array.isArray(s.phones) && s.phones.length) {
+        list = s.phones.map(p => typeof p === 'string'
+          ? { number: p.trim(), type: 'landline' }
+          : { number: (p?.number || '').trim(), type: p?.type === 'mobile' ? 'mobile' : 'landline' }
+        ).filter(p => p.number);
+      } else if (s.phone) {
+        list = [{ number: s.phone, type: 'landline' }];
       }
+      renderPhones(list);
     } catch (e) {
       // silent fail — SSR values remain
     }

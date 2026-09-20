@@ -39,7 +39,7 @@ export interface OfficeSettings {
   hero_duration_ms: number | null
   hero_effect: string | null
   phone: string
-  phones: string[] | null
+  phones: (string | OfficePhone)[] | null
   email: string
   address: string
   about_text: string
@@ -93,11 +93,26 @@ export interface ListingImage {
   created_at: string
 }
 
-export function officePhones(settings: OfficeSettings | null): string[] {
+export interface OfficePhone {
+  number: string
+  type: 'mobile' | 'landline'
+}
+
+export function officePhones(settings: OfficeSettings | null): OfficePhone[] {
   if (!settings) return []
-  const list = (settings.phones || []).map(p => (p || '').trim()).filter(Boolean)
-  if (list.length > 0) return list
-  return settings.phone ? [settings.phone] : []
+  const raw = settings.phones
+  if (Array.isArray(raw)) {
+    const list = raw
+      .map(item => {
+        if (typeof item === 'string') return { number: item.trim(), type: 'landline' as const }
+        const number = (item?.number || '').trim()
+        const type = item?.type === 'mobile' ? ('mobile' as const) : ('landline' as const)
+        return { number, type }
+      })
+      .filter(p => p.number)
+    if (list.length > 0) return list
+  }
+  return settings.phone ? [{ number: settings.phone, type: 'landline' }] : []
 }
 
 export interface HeroSlide {

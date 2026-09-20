@@ -1,5 +1,6 @@
 ---
 import { getOfficeSettings, officePhones } from '../lib/supabase'
+import PhoneIcon from './PhoneIcon.astro'
 import { t, localizePath, pick, type Lang } from '../i18n/utils'
 
 export interface Props {
@@ -47,7 +48,6 @@ const aboutText = pick(lang, settings?.about_text, settings?.about_text_en) || t
           <li><a href={localizePath('/', lang)} class="text-sm text-gray-400 hover:text-accent transition-colors">{t(lang, 'nav.home')}</a></li>
           <li><a href={localizePath('/agora', lang)} class="text-sm text-gray-400 hover:text-accent transition-colors">{t(lang, 'nav.agora')}</a></li>
           <li><a href={localizePath('/enoikiasi', lang)} class="text-sm text-gray-400 hover:text-accent transition-colors">{t(lang, 'nav.enoikiasi')}</a></li>
-          <li><a href={localizePath('/poulithike', lang)} class="text-sm text-gray-400 hover:text-accent transition-colors">{t(lang, 'nav.poulithike')}</a></li>
           <li><a href={localizePath('/grafeio', lang)} class="text-sm text-gray-400 hover:text-accent transition-colors">{t(lang, 'nav.grafeio')}</a></li>
         </ul>
       </div>
@@ -58,9 +58,9 @@ const aboutText = pick(lang, settings?.about_text, settings?.about_text_en) || t
         <ul class="space-y-3">
           {phones.map(ph => (
             <li>
-              <a href={`tel:${ph}`} class="flex items-center gap-2 text-sm text-gray-400 hover:text-accent transition-colors">
-                <svg class="w-4 h-4 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z"/></svg>
-                {ph}
+              <a href={`tel:${ph.number}`} class="flex items-center gap-2 text-sm text-gray-400 hover:text-accent transition-colors">
+                <PhoneIcon type={ph.type} class="w-4 h-4 flex-shrink-0" />
+                {ph.number}
               </a>
             </li>
           ))}

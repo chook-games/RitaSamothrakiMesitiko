@@ -2,17 +2,15 @@ import React from 'react'
 import type { Listing, Category } from '../../lib/supabase'
 
 export default function Dashboard({ listings, categories }: { listings: Listing[]; categories: Category[] }) {
-  const activeListings = listings.filter(l => l.status === 'active')
-  const soldListings = listings.filter(l => l.status === 'sold')
   const featuredListings = listings.filter(l => l.is_featured)
   const agoraCategories = categories.filter(c => c.type === 'agora' && !c.parent_id)
   const enoikiasiCategories = categories.filter(c => c.type === 'enoikiasi' && !c.parent_id)
 
   const stats = [
-    { label: 'Ενεργές Αγγελίες', value: activeListings.length, color: 'bg-blue-500', icon: 'M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z' },
-    { label: 'Πουλήθηκαν', value: soldListings.length, color: 'bg-red-500', icon: 'M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z' },
+    { label: 'Σύνολο Αγγελιών', value: listings.length, color: 'bg-blue-500', icon: 'M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z' },
     { label: 'Προτεινόμενα', value: featuredListings.length, color: 'bg-accent', icon: 'M5 3v4M3 5h4M6 17v4m-2-2h4m5-16l2.286 6.857L21 12l-5.714 2.143L13 21l-2.286-6.857L5 12l5.714-2.143L13 3z' },
     { label: 'Κατηγορίες Αγοράς', value: agoraCategories.length, color: 'bg-green-500', icon: 'M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10' },
+    { label: 'Κατηγορίες Ενοικίασης', value: enoikiasiCategories.length, color: 'bg-indigo-500', icon: 'M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6' },
   ]
 
   return (
@@ -49,7 +47,7 @@ export default function Dashboard({ listings, categories }: { listings: Listing[
                 <th className="px-6 py-3">Τίτλος</th>
                 <th className="px-6 py-3">Κατηγορία</th>
                 <th className="px-6 py-3">Τιμή</th>
-                <th className="px-6 py-3">Status</th>
+                <th className="px-6 py-3">Προτεινόμενο</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-100">
@@ -62,12 +60,10 @@ export default function Dashboard({ listings, categories }: { listings: Listing[
                     {new Intl.NumberFormat('el-GR', { style: 'currency', currency: 'EUR', maximumFractionDigits: 0 }).format(listing.price)}
                   </td>
                   <td className="px-6 py-3">
-                    {listing.status === 'sold' ? (
-                      <span className="px-2 py-1 bg-red-100 text-red-700 text-xs rounded-full font-medium">Πουλήθηκε</span>
-                    ) : listing.is_featured ? (
+                    {listing.is_featured ? (
                       <span className="px-2 py-1 bg-accent/20 text-accent-dark text-xs rounded-full font-medium">Προτεινόμενο</span>
                     ) : (
-                      <span className="px-2 py-1 bg-green-100 text-green-700 text-xs rounded-full font-medium">Ενεργό</span>
+                      <span className="text-gray-300">—</span>
                     )}
                   </td>
                 </tr>

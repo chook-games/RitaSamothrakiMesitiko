@@ -1,5 +1,6 @@
 ---
 import Layout from '../../layouts/Layout.astro'
+import PhoneIcon from '../PhoneIcon.astro'
 import { getOfficeSettings, officePhones } from '../../lib/supabase'
 import { t, localizePath, pick, type Lang } from '../../i18n/utils'
 
@@ -106,7 +107,10 @@ const aboutText = pick(lang, settings?.about_text, settings?.about_text_en)
                   <p class="text-xs text-gray-400 uppercase tracking-wider mb-1">{t(lang, 'office.phone')}</p>
                   <div class="space-y-1">
                     {phones.map(ph => (
-                      <a href={`tel:${ph}`} class="block text-primary font-semibold hover:text-primary-light transition-colors">{ph}</a>
+                      <a href={`tel:${ph.number}`} class="flex items-center gap-2 text-primary font-semibold hover:text-primary-light transition-colors">
+                        <PhoneIcon type={ph.type} class="w-4 h-4" />
+                        {ph.number}
+                      </a>
                     ))}
                   </div>
                 </div>

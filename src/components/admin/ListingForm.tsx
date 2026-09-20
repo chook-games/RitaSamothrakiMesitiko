@@ -20,12 +20,11 @@ export default function ListingForm({ listing, categories, phoneDefault, onSave,
   const [phone, setPhone] = useState(listing?.phone || phoneDefault)
   const [youtubeUrl, setYoutubeUrl] = useState(listing?.youtube_url || '')
   const [isFeatured, setIsFeatured] = useState(listing?.is_featured || false)
-  const [status, setStatus] = useState(listing?.status || 'active')
   const [uploading, setUploading] = useState(false)
   const [translating, setTranslating] = useState(false)
 
   // Available types
-  const types = ['agora', 'enoikiasi', 'poulithike'] as const
+  const types = ['agora', 'enoikiasi'] as const
   const [selectedType, setSelectedType] = useState<string>(listing?.category?.type || 'agora')
   const filteredCategories = categories.filter(c => c.type === selectedType && !c.parent_id)
 
@@ -44,7 +43,7 @@ export default function ListingForm({ listing, categories, phoneDefault, onSave,
       phone,
       youtube_url: youtubeUrl || null,
       is_featured: isFeatured,
-      status,
+      status: listing?.status || 'active',
     }
 
     if (listing) {
@@ -213,7 +212,6 @@ export default function ListingForm({ listing, categories, phoneDefault, onSave,
             >
               <option value="agora">Αγορά</option>
               <option value="enoikiasi">Ενοικίαση</option>
-              <option value="poulithike">Πουλήθηκε</option>
             </select>
           </div>
           <div>
@@ -252,15 +250,6 @@ export default function ListingForm({ listing, categories, phoneDefault, onSave,
               className="w-4 h-4 rounded border-gray-300 text-primary focus:ring-primary"
             />
             <span className="text-sm text-gray-700">Προτεινόμενο</span>
-          </label>
-          <label className="flex items-center gap-2 cursor-pointer">
-            <input
-              type="checkbox"
-              checked={status === 'sold'}
-              onChange={e => setStatus(e.target.checked ? 'sold' : 'active')}
-              className="w-4 h-4 rounded border-gray-300 text-red-500 focus:ring-red-500"
-            />
-            <span className="text-sm text-red-600">Πουλήθηκε</span>
           </label>
         </div>
 
