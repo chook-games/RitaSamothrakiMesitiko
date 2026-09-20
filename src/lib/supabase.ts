@@ -22,7 +22,11 @@ export const supabase = IS_PLACEHOLDER
       auth: { persistSession: false }
     })
   : createClient(supabaseUrl!, supabaseAnonKey!, {
-      auth: { persistSession: false }
+      auth: {
+        persistSession: true,
+        autoRefreshToken: true,
+        detectSessionInUrl: true,
+      }
     })
 
 // Helper types
