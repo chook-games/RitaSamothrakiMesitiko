@@ -90,7 +90,19 @@ export interface ListingImage {
   listing_id: string
   url: string
   order: number
+  title_el: string | null
+  title_en: string | null
+  is_primary: boolean | null
   created_at: string
+}
+
+export function sortImages(images?: ListingImage[] | null): ListingImage[] {
+  if (!images) return []
+  return [...images].sort((a, b) => {
+    const primaryDiff = Number(b.is_primary || false) - Number(a.is_primary || false)
+    if (primaryDiff !== 0) return primaryDiff
+    return (a.order || 0) - (b.order || 0)
+  })
 }
 
 export interface OfficePhone {

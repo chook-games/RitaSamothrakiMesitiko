@@ -1,5 +1,6 @@
 ---
 import type { Listing } from '../lib/supabase'
+import { sortImages } from '../lib/supabase'
 import { t, localizePath, pick, type Lang } from '../i18n/utils'
 
 export interface Props {
@@ -10,9 +11,8 @@ export interface Props {
 const { listing } = Astro.props
 const lang: Lang = Astro.props.lang ?? 'el'
 
-const mainImage = listing.images && listing.images.length > 0
-  ? listing.images.sort((a, b) => a.order - b.order)[0].url
-  : null
+const sortedImages = sortImages(listing.images)
+const mainImage = sortedImages.length > 0 ? sortedImages[0].url : null
 const formattedPrice = new Intl.NumberFormat(lang === 'en' ? 'en-GB' : 'el-GR', {
   style: 'currency',
   currency: 'EUR',

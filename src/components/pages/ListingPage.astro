@@ -1,6 +1,6 @@
 ---
 import Layout from '../../layouts/Layout.astro'
-import { supabase, IS_PLACEHOLDER } from '../../lib/supabase'
+import { supabase, IS_PLACEHOLDER, sortImages } from '../../lib/supabase'
 import type { Listing } from '../../lib/supabase'
 import { t, localizePath, pick, type Lang } from '../../i18n/utils'
 
@@ -37,17 +37,22 @@ const formattedPrice = new Intl.NumberFormat(lang === 'en' ? 'en-GB' : 'el-GR', 
   maximumFractionDigits: 0,
 }).format(listing.price)
 
-const images = listing.images?.sort((a, b) => a.order - b.order) || []
-const mainImage = images[0]?.url || null
+const images = sortImages(listing.images)
+const imageData = images.map(img => ({
+  url: img.url,
+  title: pick(lang, img.title_el, img.title_en),
+}))
+const mainImage = imageData[0]?.url || null
 
 const listingTitle = pick(lang, listing.title, listing.title_en)
 const listingDescription = pick(lang, listing.description, listing.description_en)
 const categoryName = listing.category ? pick(lang, listing.category.name_el, listing.category.name_en) : ''
 const typeLabel = listing.category
-  ? listing.category.type === 'agora' ? t(lang, 'nav.agora') : listing.category.type === 'enoikiasi' ? t(lang, 'nav.enoikiasi') : t(lang, 'nav.poulithike')
+  ? listing.category.type === 'agora' ? t(lang, 'nav.agora') : t(lang, 'nav.enoikiasi')
   : ''
+const typeSlug = listing.category ? listing.category.type : ''
 
-const typeSlug = listing.category ? (listing.category.type === 'poulithike' ? 'poulithike' : listing.category.type) : ''
+const imagesJson = JSON.stringify(imageData).replace(/</g, '\\u003c')
 ---
 
 <Layout title={`${listingTitle} | Rita Samothraki`} description={listingDescription?.slice(0, 160)}>
@@ -60,13 +65,9 @@ const typeSlug = listing.category ? (listing.category.type === 'poulithike' ? 'p
           <span>/</span>
           {listing.category && (
             <>
-              <a href={localizePath(`/${typeSlug}`, lang)} class="hover:text-primary">
-                {typeLabel}
-              </a>
+              <a href={localizePath(`/${typeSlug}`, lang)} class="hover:text-primary">{typeLabel}</a>
               <span>/</span>
-              <a href={localizePath(`/${typeSlug}/${listing.category.slug}`, lang)} class="hover:text-primary">
-                {categoryName}
-              </a>
+              <a href={localizePath(`/${typeSlug}/${listing.category.slug}`, lang)} class="hover:text-primary">{categoryName}</a>
               <span>/</span>
             </>
           )}
@@ -77,50 +78,57 @@ const typeSlug = listing.category ? (listing.category.type === 'poulithike' ? 'p
 
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 md:py-10">
       <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
-        <!-- Left: Gallery & Description -->
-        <div class="lg:col-span-2 space-y-6">
+        <!-- Left: Gallery + Video -->
+        <div class="lg:col-span-2 space-y-5">
           <!-- Main Image -->
-          <div class="bg-white rounded-2xl overflow-hidden shadow-sm border border-gray-100">
+          <button
+            type="button"
+            data-open-lightbox
+            data-index="0"
+            class="group relative block w-full bg-white rounded-2xl overflow-hidden shadow-sm border border-gray-100"
+            aria-label="Άνοιγμα gallery"
+          >
             {mainImage ? (
-              <div class="relative aspect-[16/9]">
-                <img src={mainImage} alt={listingTitle} class="w-full h-full object-cover" />
+              <div class="relative aspect-[16/10]">
+                <img id="main-image" src={mainImage} alt={listingTitle} class="w-full h-full object-cover" />
+                <span class="absolute inset-0 bg-black/0 group-hover:bg-black/10 transition-colors"></span>
+                <span class="absolute bottom-3 right-3 inline-flex items-center gap-1.5 px-3 py-1.5 bg-black/60 text-white text-xs font-medium rounded-lg opacity-0 group-hover:opacity-100 transition-opacity">
+                  <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 8V4m0 0h4M4 4l5 5m11-1V4m0 0h-4m4 0l-5 5M4 16v4m0 0h4m-4 0l5-5m11 5l-5-5m5 5v-4m0 4h-4"/></svg>
+                  Gallery ({imageData.length})
+                </span>
               </div>
             ) : (
-              <div class="aspect-[16/9] bg-gray-100 flex items-center justify-center">
+              <div class="aspect-[16/10] bg-gray-100 flex items-center justify-center">
                 <svg class="w-24 h-24 text-gray-300" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
                 </svg>
               </div>
             )}
-          </div>
+          </button>
 
-          <!-- Thumbnail Gallery -->
+          <!-- Thumbnail strip (horizontal scroll with arrows) -->
           {images.length > 1 && (
-            <div class="grid grid-cols-4 gap-3" id="listing-thumbs">
-              {images.map((img, i) => (
-                <button
-                  type="button"
-                  data-thumb
-                  data-src={img.url}
-                  class={`aspect-[4/3] rounded-xl overflow-hidden bg-white shadow-sm border transition-all ${i === 0 ? 'border-primary ring-2 ring-primary/30' : 'border-gray-100'}`}
-                >
-                  <img src={img.url} alt="" class="w-full h-full object-cover hover:scale-105 transition-transform duration-300 cursor-pointer" loading="lazy" />
-                </button>
-              ))}
+            <div class="relative">
+              <button data-strip-prev class="absolute left-0 top-1/2 -translate-y-1/2 z-10 w-9 h-9 -ml-1 flex items-center justify-center rounded-full bg-white shadow-md border border-gray-200 text-gray-600 hover:text-primary" aria-label="Προηγούμενες">
+                <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/></svg>
+              </button>
+              <button data-strip-next class="absolute right-0 top-1/2 -translate-y-1/2 z-10 w-9 h-9 -mr-1 flex items-center justify-center rounded-full bg-white shadow-md border border-gray-200 text-gray-600 hover:text-primary" aria-label="Επόμενες">
+                <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg>
+              </button>
+              <div id="thumb-strip" class="flex gap-2 overflow-x-auto scroll-smooth px-10 py-1">
+                {imageData.map((img, i) => (
+                  <button
+                    type="button"
+                    data-open-lightbox
+                    data-index={i}
+                    class="flex-shrink-0 w-28 h-20 rounded-xl overflow-hidden bg-gray-100 border border-gray-200 hover:border-primary transition-colors"
+                  >
+                    <img src={img.url} alt={img.title} class="w-full h-full object-cover" loading="lazy" />
+                  </button>
+                ))}
+              </div>
             </div>
           )}
-
-          <!-- Description -->
-          <div class="bg-white rounded-2xl p-6 md:p-8 shadow-sm border border-gray-100">
-            <h2 class="text-xl font-bold text-gray-900 mb-4">{t(lang, 'detail.description')}</h2>
-            <div class="prose prose-gray max-w-none">
-              {listingDescription ? (
-                <p class="text-gray-600 leading-relaxed whitespace-pre-line">{listingDescription}</p>
-              ) : (
-                <p class="text-gray-400 italic">{t(lang, 'detail.noDescription')}</p>
-              )}
-            </div>
-          </div>
 
           <!-- YouTube Video -->
           {listing.youtube_url && (
@@ -138,9 +146,8 @@ const typeSlug = listing.category ? (listing.category.type === 'poulithike' ? 'p
           )}
         </div>
 
-        <!-- Right: Sidebar -->
+        <!-- Right: Info + Description + Contact -->
         <div class="space-y-6">
-          <!-- Listing Info Card -->
           <div class="bg-white rounded-2xl p-6 md:p-8 shadow-sm border border-gray-100 lg:sticky lg:top-24">
             <div class="flex items-center gap-2 mb-4">
               {listing.code && (
@@ -158,14 +165,24 @@ const typeSlug = listing.category ? (listing.category.type === 'poulithike' ? 'p
             </div>
 
             {listing.category && (
-              <div class="flex items-center gap-2 text-sm text-gray-500 mb-4">
+              <div class="flex items-center gap-2 text-sm text-gray-500 mb-5">
                 <span class="px-3 py-1.5 bg-gray-100 rounded-lg">{typeLabel}</span>
                 <span class="px-3 py-1.5 bg-gray-100 rounded-lg">{categoryName}</span>
               </div>
             )}
 
+            <!-- Description -->
+            <div class="border-t border-gray-100 pt-5 mb-5">
+              <h2 class="text-base font-bold text-gray-900 mb-2">{t(lang, 'detail.description')}</h2>
+              {listingDescription ? (
+                <p class="text-sm text-gray-600 leading-relaxed whitespace-pre-line max-h-72 overflow-y-auto pr-1">{listingDescription}</p>
+              ) : (
+                <p class="text-sm text-gray-400 italic">{t(lang, 'detail.noDescription')}</p>
+              )}
+            </div>
+
             <!-- Phone / Contact -->
-            <div class="border-t border-gray-100 pt-6 mt-6">
+            <div class="border-t border-gray-100 pt-6">
               <p class="text-sm text-gray-500 mb-3">{t(lang, 'detail.contactUs')}</p>
               <a href={`tel:${listing.phone}`} class="flex items-center justify-center gap-2 w-full px-5 py-3.5 bg-primary text-white font-semibold rounded-xl hover:bg-primary-light transition-colors shadow-sm">
                 <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z"/></svg>
@@ -173,7 +190,6 @@ const typeSlug = listing.category ? (listing.category.type === 'poulithike' ? 'p
               </a>
             </div>
 
-            <!-- Created date -->
             <p class="text-xs text-gray-400 mt-4 text-center">
               {t(lang, 'detail.posted')}: {new Date(listing.created_at).toLocaleDateString(lang === 'en' ? 'en-GB' : 'el-GR', { year: 'numeric', month: 'long', day: 'numeric' })}
             </p>
@@ -182,21 +198,114 @@ const typeSlug = listing.category ? (listing.category.type === 'poulithike' ? 'p
       </div>
     </div>
   </div>
+
+  <!-- Lightbox -->
+  <div id="lightbox" class="hidden fixed inset-0 z-[100] bg-black/90">
+    <div class="absolute inset-0" data-lightbox-backdrop></div>
+    <div class="relative h-full flex flex-col lg:flex-row">
+      <!-- Large image -->
+      <div class="relative flex-1 flex items-center justify-center p-4 lg:p-8">
+        <img id="lightbox-image" src="" alt="" class="max-w-full max-h-[70vh] lg:max-h-[85vh] object-contain" />
+        <button id="lightbox-prev" class="absolute left-3 lg:left-6 top-1/2 -translate-y-1/2 w-11 h-11 rounded-full bg-white/10 hover:bg-white/25 text-white backdrop-blur-sm border border-white/20 flex items-center justify-center" aria-label="Προηγούμενη">
+          <svg class="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/></svg>
+        </button>
+        <button id="lightbox-next" class="absolute right-3 lg:right-6 top-1/2 -translate-y-1/2 w-11 h-11 rounded-full bg-white/10 hover:bg-white/25 text-white backdrop-blur-sm border border-white/20 flex items-center justify-center" aria-label="Επόμενη">
+          <svg class="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg>
+        </button>
+        <div id="lightbox-caption" class="absolute bottom-3 left-1/2 -translate-x-1/2 px-4 py-2 bg-black/60 text-white text-sm rounded-lg max-w-[90%] text-center"></div>
+      </div>
+
+      <!-- Thumbnails list -->
+      <div class="lg:w-64 flex-shrink-0 bg-black/40 lg:bg-black/30 border-t lg:border-t-0 lg:border-l border-white/10">
+        <div class="flex lg:flex-col items-center gap-2 p-3 overflow-x-auto lg:overflow-y-auto lg:h-full" id="lightbox-thumbs"></div>
+      </div>
+    </div>
+    <button id="lightbox-close" class="absolute top-3 right-3 z-10 w-10 h-10 rounded-full bg-white/10 hover:bg-white/25 text-white flex items-center justify-center" aria-label="Κλείσιμο">
+      <svg class="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+    </button>
+  </div>
+
+  <script is:inline type="application/json" id="listing-images-data" set:html={imagesJson}></script>
 </Layout>
 
 <script>
-  const mainImg = document.querySelector('.lg\\:col-span-2 .aspect-\\[16\\/9\\] img') as HTMLImageElement | null;
-  const thumbs = document.querySelectorAll<HTMLButtonElement>('[data-thumb]');
-  thumbs.forEach((thumb) => {
-    thumb.addEventListener('click', () => {
-      const src = thumb.dataset.src;
-      if (src && mainImg) mainImg.src = src;
-      thumbs.forEach((t) => {
-        t.classList.remove('border-primary', 'ring-2', 'ring-primary/30');
-        t.classList.add('border-gray-100');
+  (() => {
+    const dataEl = document.getElementById('listing-images-data');
+    if (!dataEl) return;
+    let data = [];
+    try { data = JSON.parse(dataEl.textContent || '[]'); } catch { data = []; }
+    if (!Array.isArray(data) || data.length === 0) return;
+
+    const lightbox = document.getElementById('lightbox');
+    const imageEl = document.getElementById('lightbox-image');
+    const captionEl = document.getElementById('lightbox-caption');
+    const thumbsEl = document.getElementById('lightbox-thumbs');
+    let index = 0;
+
+    const buildThumbs = () => {
+      if (!thumbsEl) return;
+      thumbsEl.innerHTML = data.map((img, i) =>
+        `<button type="button" data-lb-thumb="${i}" class="flex-shrink-0 w-20 h-16 lg:w-full lg:h-20 rounded-lg overflow-hidden border-2 transition-colors border-transparent">` +
+        `<img src="${img.url}" alt="" class="w-full h-full object-cover" /></button>`
+      ).join('');
+      thumbsEl.querySelectorAll('[data-lb-thumb]').forEach(btn => {
+        btn.addEventListener('click', () => {
+          index = Number(btn.getAttribute('data-lb-thumb'));
+          render();
+        });
       });
-      thumb.classList.remove('border-gray-100');
-      thumb.classList.add('border-primary', 'ring-2', 'ring-primary/30');
+    };
+
+    const render = () => {
+      const item = data[index];
+      if (imageEl) { imageEl.src = item.url; imageEl.alt = item.title || ''; }
+      if (captionEl) {
+        captionEl.textContent = item.title || '';
+        captionEl.style.display = item.title ? '' : 'none';
+      }
+      if (thumbsEl) {
+        thumbsEl.querySelectorAll('[data-lb-thumb]').forEach((btn, i) => {
+          const active = i === index;
+          btn.classList.toggle('border-accent', active);
+          btn.classList.toggle('border-transparent', !active);
+          if (active) btn.scrollIntoView({ block: 'nearest', inline: 'center' });
+        });
+      }
+    };
+
+    const open = (i: number) => {
+      index = (i + data.length) % data.length;
+      if (lightbox) lightbox.classList.remove('hidden');
+      document.body.style.overflow = 'hidden';
+      render();
+    };
+    const close = () => {
+      if (lightbox) lightbox.classList.add('hidden');
+      document.body.style.overflow = '';
+    };
+    const next = () => { index = (index + 1) % data.length; render(); };
+    const prev = () => { index = (index - 1 + data.length) % data.length; render(); };
+
+    document.querySelectorAll('[data-open-lightbox]').forEach(el => {
+      el.addEventListener('click', () => open(Number(el.getAttribute('data-index') || 0)));
     });
-  });
+    document.getElementById('lightbox-next')?.addEventListener('click', next);
+    document.getElementById('lightbox-prev')?.addEventListener('click', prev);
+    document.getElementById('lightbox-close')?.addEventListener('click', close);
+    document.querySelector('[data-lightbox-backdrop]')?.addEventListener('click', close);
+
+    document.addEventListener('keydown', (e) => {
+      if (!lightbox || lightbox.classList.contains('hidden')) return;
+      if (e.key === 'Escape') close();
+      else if (e.key === 'ArrowRight') next();
+      else if (e.key === 'ArrowLeft') prev();
+    });
+
+    // Inline thumbnail strip arrows
+    const strip = document.getElementById('thumb-strip');
+    document.querySelector('[data-strip-prev]')?.addEventListener('click', () => strip?.scrollBy({ left: -300, behavior: 'smooth' }));
+    document.querySelector('[data-strip-next]')?.addEventListener('click', () => strip?.scrollBy({ left: 300, behavior: 'smooth' }));
+
+    buildThumbs();
+  })();
 </script>

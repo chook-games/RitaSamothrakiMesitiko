@@ -59,6 +59,7 @@ Tables: `office_settings`, `categories`, `listings`, `listing_images`
 - Hero slideshow settings (duration/effect): `supabase/migrations/20260920020000_hero_settings.sql`
 - Multiple phone numbers: `supabase/migrations/20260920030000_phones.sql`
 - Phone types (mobile/landline): `supabase/migrations/20260920040000_phone_types.sql`
+- Image titles + primary image: `supabase/migrations/20260920050000_image_titles.sql`
 
 ## 📥 Μαζική Εισαγωγή Αγγελιών (xe.gr / Χρυσή Ευκαιρία)
 

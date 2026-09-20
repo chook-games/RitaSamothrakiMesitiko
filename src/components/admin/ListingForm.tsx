@@ -2,6 +2,7 @@ import React, { useState } from 'react'
 import { supabase } from '../../lib/supabase'
 import type { Listing, Category } from '../../lib/supabase'
 import { translateTexts } from '../../lib/translate'
+import ListingImages from './ListingImages'
 
 export default function ListingForm({ listing, categories, phoneDefault, onSave, onCancel }: {
   listing: Listing | null
@@ -20,7 +21,6 @@ export default function ListingForm({ listing, categories, phoneDefault, onSave,
   const [phone, setPhone] = useState(listing?.phone || phoneDefault)
   const [youtubeUrl, setYoutubeUrl] = useState(listing?.youtube_url || '')
   const [isFeatured, setIsFeatured] = useState(listing?.is_featured || false)
-  const [uploading, setUploading] = useState(false)
   const [translating, setTranslating] = useState(false)
 
   // Available types
@@ -56,37 +56,6 @@ export default function ListingForm({ listing, categories, phoneDefault, onSave,
     onSave()
   }
 
-  const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const files = e.target.files
-    if (!files || files.length === 0 || !listing) return
-    setUploading(true)
-
-    for (let i = 0; i < files.length; i++) {
-      const file = files[i]
-      const fileExt = file.name.split('.').pop()
-      const fileName = `${listing.id}/${Date.now()}_${i}.${fileExt}`
-      
-      const { error: uploadError } = await supabase.storage.from('listings').upload(fileName, file)
-      if (uploadError) { alert('Σφάλμα upload: ' + uploadError.message); continue }
-
-      const { data: { publicUrl } } = supabase.storage.from('listings').getPublicUrl(fileName)
-      
-      await supabase.from('listing_images').insert({
-        listing_id: listing.id,
-        url: publicUrl,
-        order: (listing.images?.length || 0) + i,
-      })
-    }
-    setUploading(false)
-    onSave()
-  }
-
-  const handleDeleteImage = async (imageId: string) => {
-    const { error } = await supabase.from('listing_images').delete().eq('id', imageId)
-    if (error) alert('Σφάλμα: ' + error.message)
-    else onSave()
-  }
-
   const handleAutoTranslate = async () => {
     setTranslating(true)
     try {
@@ -102,11 +71,29 @@ export default function ListingForm({ listing, categories, phoneDefault, onSave,
 
   return (
     <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6 mb-6">
-      <h2 className="text-lg font-bold text-gray-900 mb-6">
-        {listing ? 'Επεξεργασία Αγγελίας' : 'Νέα Αγγελία'}
-      </h2>
+      <div className="flex items-center justify-between gap-3 mb-6 flex-wrap">
+        <h2 className="text-lg font-bold text-gray-900">
+          {listing ? 'Επεξεργασία Αγγελίας' : 'Νέα Αγγελία'}
+        </h2>
+        <div className="flex items-center gap-2">
+          <button
+            type="submit"
+            form="listing-form"
+            className="px-5 py-2.5 bg-primary text-white text-sm font-semibold rounded-xl hover:bg-primary-light transition-colors"
+          >
+            {listing ? 'Ενημέρωση' : 'Δημιουργία'}
+          </button>
+          <button
+            type="button"
+            onClick={onCancel}
+            className="px-5 py-2.5 bg-gray-100 text-gray-700 text-sm font-medium rounded-xl hover:bg-gray-200 transition-colors"
+          >
+            Ακύρωση
+          </button>
+        </div>
+      </div>
 
-      <form onSubmit={handleSubmit} className="space-y-5">
+      <form id="listing-form" onSubmit={handleSubmit} className="space-y-5">
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">Κωδικός Αγγελίας</label>
@@ -252,51 +239,10 @@ export default function ListingForm({ listing, categories, phoneDefault, onSave,
             <span className="text-sm text-gray-700">Προτεινόμενο</span>
           </label>
         </div>
-
-        <div className="flex items-center gap-3 pt-2">
-          <button
-            type="submit"
-            className="px-6 py-2.5 bg-primary text-white text-sm font-semibold rounded-xl hover:bg-primary-light transition-colors"
-          >
-            {listing ? 'Ενημέρωση' : 'Δημιουργία'}
-          </button>
-          <button
-            type="button"
-            onClick={onCancel}
-            className="px-6 py-2.5 bg-gray-100 text-gray-700 text-sm font-medium rounded-xl hover:bg-gray-200 transition-colors"
-          >
-            Ακύρωση
-          </button>
-        </div>
       </form>
 
-      {/* Image Upload */}
-      {listing && (
-        <div className="mt-6 pt-6 border-t border-gray-100">
-          <h3 className="text-sm font-semibold text-gray-900 mb-3">Φωτογραφίες</h3>
-          
-          <div className="grid grid-cols-4 sm:grid-cols-6 gap-3 mb-4">
-            {listing.images?.sort((a, b) => a.order - b.order).map(img => (
-              <div key={img.id} className="relative group aspect-[4/3] rounded-xl overflow-hidden bg-gray-100">
-                <img src={img.url} alt="" className="w-full h-full object-cover" />
-                <button
-                  type="button"
-                  onClick={() => handleDeleteImage(img.id)}
-                  className="absolute top-1 right-1 w-6 h-6 bg-red-500 text-white rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity text-xs"
-                >
-                  ✕
-                </button>
-              </div>
-            ))}
-          </div>
-
-          <label className="inline-flex items-center gap-2 px-4 py-2.5 bg-gray-100 text-gray-700 text-sm font-medium rounded-xl hover:bg-gray-200 cursor-pointer transition-colors">
-            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
-            {uploading ? 'Ανέβασμα...' : 'Προσθήκη Φωτογραφιών'}
-            <input type="file" accept="image/*" multiple onChange={handleImageUpload} className="hidden" disabled={uploading} />
-          </label>
-        </div>
-      )}
+      {/* Image management */}
+      {listing && <ListingImages listing={listing} />}
     </div>
   )
 }
