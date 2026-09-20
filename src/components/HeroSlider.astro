@@ -1,5 +1,6 @@
 ---
 import { t, localizePath, withBase, type Lang } from '../i18n/utils'
+import { getHeroSlides } from '../lib/supabase'
 
 export interface Props {
   lang?: Lang
@@ -9,22 +10,42 @@ export interface Props {
 const lang: Lang = Astro.props.lang ?? 'el'
 const officeName = Astro.props.officeName ?? 'Rita Samothraki'
 
-const slideCount = 16
-const slides = Array.from({ length: slideCount }, (_, i) => withBase(`/gallery/slide-${String(i + 1).padStart(2, '0')}.jpg`))
+type SlideItem = { url: string; duration: number; effect: string }
+
+const configured = await getHeroSlides()
+let items: SlideItem[] = configured.map(s => ({
+  url: s.image_url,
+  duration: Number(s.duration_ms) || 6000,
+  effect: s.effect || 'fade',
+}))
+
+if (items.length === 0) {
+  items = Array.from({ length: 16 }, (_, i) => ({
+    url: withBase(`/gallery/slide-${String(i + 1).padStart(2, '0')}.jpg`),
+    duration: 6000,
+    effect: 'fade',
+  }))
+}
 ---
 
 <section id="hero-slider" class="relative min-h-[88svh] sm:min-h-[90svh] overflow-hidden bg-primary-dark">
   <!-- Slides -->
-  <div class="absolute inset-0">
-    {slides.map((src, i) => (
-      <div class={`hero-slide absolute inset-0 ${i === 0 ? 'is-active' : ''}`} data-hero-slide>
+  <div class="absolute inset-0" data-hero-slides>
+    {items.map((item, i) => (
+      <div
+        class={`hero-slide absolute inset-0 ${i === 0 ? 'is-active' : ''}`}
+        data-hero-slide
+        data-effect={item.effect}
+        data-duration={item.duration}
+      >
         <img
-          src={src}
+          src={item.url}
           alt=""
           class="w-full h-full object-cover"
           loading={i < 3 ? 'eager' : 'lazy'}
           fetchpriority={i === 0 ? 'high' : 'low'}
           decoding="async"
+          style={item.effect === 'zoom' ? `transition-duration: ${item.duration}ms;` : undefined}
         />
       </div>
     ))}
@@ -60,26 +81,6 @@ const slides = Array.from({ length: slideCount }, (_, i) => withBase(`/gallery/s
     </div>
   </div>
 
-  <!-- Arrows -->
-  <button data-hero-prev class="hidden md:flex absolute left-4 lg:left-8 top-1/2 -translate-y-1/2 z-20 w-11 h-11 items-center justify-center rounded-full bg-white/10 hover:bg-white/25 backdrop-blur-sm border border-white/20 text-white transition-colors" aria-label="Previous slide">
-    <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/></svg>
-  </button>
-  <button data-hero-next class="hidden md:flex absolute right-4 lg:right-8 top-1/2 -translate-y-1/2 z-20 w-11 h-11 items-center justify-center rounded-full bg-white/10 hover:bg-white/25 backdrop-blur-sm border border-white/20 text-white transition-colors" aria-label="Next slide">
-    <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg>
-  </button>
-
-  <!-- Dots -->
-  <div class="absolute bottom-7 left-1/2 -translate-x-1/2 z-20 flex flex-wrap justify-center items-center gap-2 max-w-[90vw] px-3" data-hero-dots>
-    {slides.map((_, i) => (
-      <button
-        data-hero-dot
-        data-index={i}
-        aria-label={`Slide ${i + 1}`}
-        class={`h-2 rounded-full transition-all duration-300 ${i === 0 ? 'w-6 bg-accent' : 'w-2 bg-white/40 hover:bg-white/70'}`}
-      ></button>
-    ))}
-  </div>
-
   <!-- Bottom fade into page -->
   <div class="absolute bottom-0 left-0 right-0 h-20 bg-gradient-to-t from-white to-transparent pointer-events-none"></div>
 </section>
@@ -88,91 +89,82 @@ const slides = Array.from({ length: slideCount }, (_, i) => withBase(`/gallery/s
   (() => {
     const root = document.getElementById('hero-slider');
     if (!root) return;
+    const container = root.querySelector('[data-hero-slides]');
+    if (!container) return;
 
-    const slides = Array.from(root.querySelectorAll('[data-hero-slide]'));
-    const dots = Array.from(root.querySelectorAll('[data-hero-dot]'));
-    if (slides.length < 2) return;
-
-    const DURATION = 6000;
-    const canHover = window.matchMedia('(hover: hover) and (pointer: fine)').matches;
     let index = 0;
     let timer;
 
-    const render = () => {
+    const getSlides = () => Array.from(container.querySelectorAll('[data-hero-slide]'));
+    const getDuration = (el) => Number(el?.getAttribute('data-duration')) || 6000;
+
+    const render = (slides) => {
       slides.forEach((slide, i) => slide.classList.toggle('is-active', i === index));
-      dots.forEach((dot, i) => {
-        const active = i === index;
-        dot.classList.toggle('w-6', active);
-        dot.classList.toggle('bg-accent', active);
-        dot.classList.toggle('w-2', !active);
-        dot.classList.toggle('bg-white/40', !active);
-        dot.classList.toggle('hover:bg-white/70', !active);
-      });
     };
 
     const clear = () => { if (timer) { window.clearTimeout(timer); timer = undefined; } };
 
-    const schedule = () => {
+    const schedule = (slides) => {
       clear();
       timer = window.setTimeout(() => {
         index = (index + 1) % slides.length;
-        render();
-        schedule();
-      }, DURATION);
+        render(slides);
+        schedule(slides);
+      }, getDuration(slides[index]));
     };
 
-    const goTo = (next) => {
-      index = (next + slides.length) % slides.length;
-      render();
-      schedule();
+    const start = () => {
+      let slides = getSlides();
+      if (slides.length === 0) return;
+      index = 0;
+      render(slides);
+      schedule(slides);
     };
 
-    root.querySelector('[data-hero-next]')?.addEventListener('click', () => goTo(index + 1));
-    root.querySelector('[data-hero-prev]')?.addEventListener('click', () => goTo(index - 1));
-    dots.forEach(dot => {
-      dot.addEventListener('click', () => goTo(Number(dot.dataset.index)));
-    });
-
-    // Pause on hover only on devices with a real pointer
-    if (canHover) {
-      root.addEventListener('mouseenter', clear);
-      root.addEventListener('mouseleave', schedule);
-    }
-
-    // Swipe (keeps autoplay running)
-    let touchX = 0;
-    let touchY = 0;
-    root.addEventListener('touchstart', (e) => {
-      touchX = e.touches[0].clientX;
-      touchY = e.touches[0].clientY;
-    }, { passive: true });
-    root.addEventListener('touchend', (e) => {
-      const dx = e.changedTouches[0].clientX - touchX;
-      const dy = e.changedTouches[0].clientY - touchY;
-      if (Math.abs(dx) > 45 && Math.abs(dx) > Math.abs(dy)) {
-        goTo(index + (dx < 0 ? 1 : -1));
-      }
-    }, { passive: true });
+    // Start immediately with server-rendered slides
+    start();
 
     // Keep timing sane when the tab is hidden
     document.addEventListener('visibilitychange', () => {
+      const slides = getSlides();
+      if (slides.length === 0) return;
       if (document.hidden) clear();
-      else schedule();
+      else schedule(slides);
     });
 
-    // Preload the remaining images in the background
-    window.addEventListener('load', () => {
-      slides.forEach((slide, i) => {
-        if (i < 3) return;
-        const img = slide.querySelector('img');
-        if (img) {
-          const pre = new Image();
-          pre.src = img.getAttribute('src') || '';
-        }
-      });
-    });
+    // Refresh slides from Supabase (lets admin changes appear without redeploy)
+    const esc = (s) => String(s)
+      .replace(/&/g, '&amp;')
+      .replace(/"/g, '&quot;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;');
 
-    render();
-    schedule();
+    (async () => {
+      try {
+        const url = import.meta.env.PUBLIC_SUPABASE_URL;
+        const key = import.meta.env.PUBLIC_SUPABASE_ANON_KEY;
+        if (!url || !key || url.includes('placeholder')) return;
+
+        const res = await fetch(`${url}/rest/v1/hero_slides?select=*&is_active=eq.true&order=order.asc`, {
+          headers: { apikey: key, Authorization: `Bearer ${key}` },
+        });
+        if (!res.ok) return;
+        const rows = await res.json();
+        if (!Array.isArray(rows) || rows.length === 0) return;
+
+        const effects = ['fade', 'slide', 'zoom'];
+        container.innerHTML = rows.map((row, i) => {
+          const dur = Number(row.duration_ms) || 6000;
+          const effect = effects.includes(row.effect) ? row.effect : 'fade';
+          const style = effect === 'zoom' ? ` style="transition-duration:${dur}ms"` : '';
+          return `<div class="hero-slide absolute inset-0${i === 0 ? ' is-active' : ''}" data-hero-slide data-effect="${effect}" data-duration="${dur}">` +
+            `<img src="${esc(row.image_url)}" alt="" class="w-full h-full object-cover" decoding="async"${style} /></div>`;
+        }).join('');
+
+        start();
+      } catch {
+        // keep server-rendered slides
+      }
+    })();
   })();
 </script>

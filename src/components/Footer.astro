@@ -9,6 +9,7 @@ export interface Props {
 const lang: Lang = Astro.props.lang ?? 'el'
 
 const settings = await getOfficeSettings()
+const logoHeight = Number(settings?.logo_height) || 40
 const currentYear = new Date().getFullYear()
 const officeName = pick(lang, settings?.name || 'Rita Samothraki', settings?.name_en || settings?.name || 'Rita Samothraki')
 const aboutText = pick(lang, settings?.about_text, settings?.about_text_en) || t(lang, 'footer.about')
@@ -22,7 +23,7 @@ const aboutText = pick(lang, settings?.about_text, settings?.about_text_en) || t
       <div class="lg:col-span-2">
         <div class="flex items-center gap-3 mb-4">
           {settings?.logo_url ? (
-            <img src={settings.logo_url} alt={officeName} class="h-10 w-auto brightness-0 invert" />
+            <img src={settings.logo_url} alt={officeName} class="w-auto brightness-0 invert" style={`height:${logoHeight}px`} />
           ) : (
             <div class="w-10 h-10 bg-accent rounded-lg flex items-center justify-center text-primary-dark font-bold text-lg">
               RS

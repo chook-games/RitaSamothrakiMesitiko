@@ -31,6 +31,7 @@ export interface OfficeSettings {
   name: string
   name_en: string | null
   logo_url: string | null
+  logo_height: number | null
   phone: string
   email: string
   address: string
@@ -82,6 +83,26 @@ export interface ListingImage {
   url: string
   order: number
   created_at: string
+}
+
+export interface HeroSlide {
+  id: string
+  image_url: string
+  order: number
+  duration_ms: number | null
+  effect: 'fade' | 'slide' | 'zoom' | null
+  is_active: boolean | null
+  created_at: string
+}
+
+export async function getHeroSlides(): Promise<HeroSlide[]> {
+  if (IS_PLACEHOLDER) return []
+  const { data } = await supabase
+    .from('hero_slides')
+    .select('*')
+    .eq('is_active', true)
+    .order('order', { ascending: true })
+  return data || []
 }
 
 // Database functions

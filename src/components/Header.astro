@@ -12,6 +12,8 @@ const lang: Lang = Astro.props.lang ?? 'el'
 const categories = await getCategories()
 const settings = await getOfficeSettings()
 
+const logoHeight = Number(settings?.logo_height) || 40
+
 const agoraCategories = categories.filter(c => c.type === 'agora')
 const enoikiasiCategories = categories.filter(c => c.type === 'enoikiasi')
 
@@ -32,7 +34,7 @@ const enHref = withBase(`/en${pathNoLang === '/' ? '' : pathNoLang}`)
       <!-- Logo -->
       <a href={localizePath('/', lang)} class="flex items-center gap-3 group">
         {settings?.logo_url ? (
-          <img id="header-logo" src={settings.logo_url} alt={settings.name} class="h-10 w-auto" />
+          <img id="header-logo" src={settings.logo_url} alt={settings.name} class="w-auto" style={`height:${logoHeight}px`} />
         ) : (
           <div id="header-logo-fallback" class="w-10 h-10 bg-primary rounded-lg flex items-center justify-center text-white font-bold text-lg">
             RS
@@ -243,7 +245,11 @@ const enHref = withBase(`/en${pathNoLang === '/' ? '' : pathNoLang}`)
       if (s.logo_url) {
         const logo = document.getElementById('header-logo');
         const fb = document.getElementById('header-logo-fallback');
-        if (logo) { logo.src = s.logo_url; logo.classList.remove('hidden'); }
+        if (logo) {
+          logo.src = s.logo_url;
+          if (s.logo_height) logo.style.height = `${s.logo_height}px`;
+          logo.classList.remove('hidden');
+        }
         if (fb) fb.classList.add('hidden');
       }
       if (s.name) {
