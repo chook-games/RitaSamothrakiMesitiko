@@ -131,16 +131,37 @@ npm run build
 
 ## 🚀 Deployment
 
-Κάθε push στο `master` κάνει αυτόματα build & deploy μέσω GitHub Actions (`.github/workflows/deploy.yml`).
+### Cloudflare Pages (production — root domain)
+
+1. Cloudflare Dashboard → **Workers & Pages → Create → Pages → Connect to Git** → διάλεξε το repo.
+2. Build settings: Framework **Astro**, Build command `npm run build`, Output directory `dist`.
+3. Environment variables:
+   - `PUBLIC_SUPABASE_URL`
+   - `PUBLIC_SUPABASE_ANON_KEY`
+   - (προαιρετικά) `PUBLIC_SITE_URL=https://realestate.samothraki.gr`
+   - `NODE_VERSION=22`
+4. Custom domain: Pages project → **Custom domains** → πρόσθεσε το domain (CNAME στο DNS σου).
+5. Κάθε push στο `master` κάνει αυτόματα deploy.
+
+Το `astro.config.mjs` χρησιμοποιεί `base: '/'` όταν το `DEPLOY_TARGET` δεν είναι `ghpages` — άρα Cloudflare σερβίρει στη ρίζα του domain.
+
+### GitHub Pages (προσωρινά / εναλλακτικά)
+
+Κάθε push στο `master` κάνει build & deploy μέσω GitHub Actions (`.github/workflows/deploy.yml`) με `DEPLOY_TARGET=ghpages`, ώστε να κρατάει το base `/RitaSamothrakiMesitiko`.
 
 Secrets που χρειάζονται στο repo:
 - `PUBLIC_SUPABASE_URL`
 - `PUBLIC_SUPABASE_ANON_KEY`
 
+### Supabase (καινούργιο domain)
+
+Authentication → URL Configuration:
+- **Site URL**: `https://realestate.samothraki.gr`
+- **Redirect URLs**: `https://realestate.samothraki.gr/**`
+
 ## 🎯 Μελλοντικές Βελτιώσεις
 
 - SEO optimization (meta tags, sitemap, robots.txt)
-- Μετάβαση σε Vercel/Netlify για SSR & καλύτερο SEO
 - Contact form
 - Property alerts
 - Custom domain
