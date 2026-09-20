@@ -111,7 +111,7 @@ export default function SlidesManager() {
       <div className="flex items-center justify-between mb-6 flex-wrap gap-3">
         <div>
           <h1 className="text-2xl font-bold text-gray-900">Slideshow Αρχικής</h1>
-          <p className="text-sm text-gray-500 mt-1">Οι εικόνες που εναλλάσσονται στο πάνω μέρος της αρχικής σελίδας. Αν δεν υπάρχουν ενεργά slides, χρησιμοποιούνται οι προεπιλεγμένες εικόνες.</p>
+          <p className="text-sm text-gray-500 mt-1">Οι εικόνες που εναλλάσσονται στο πάνω μέρος της αρχικής σελίδας. Τα slides προστίθενται αποκλειστικά από εδώ — αν δεν υπάρχει κανένα ενεργό slide, η αρχική δείχνει μόνο το χρώμα φόντου.</p>
         </div>
         <button
           onClick={openNew}

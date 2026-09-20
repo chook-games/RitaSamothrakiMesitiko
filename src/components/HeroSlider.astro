@@ -1,5 +1,5 @@
 ---
-import { t, localizePath, withBase, type Lang } from '../i18n/utils'
+import { t, localizePath, type Lang } from '../i18n/utils'
 import { getHeroSlides } from '../lib/supabase'
 
 export interface Props {
@@ -12,20 +12,12 @@ const officeName = Astro.props.officeName ?? 'Rita Samothraki'
 
 type SlideItem = { url: string; duration: number; effect: string }
 
-const configured = await getHeroSlides()
-let items: SlideItem[] = configured.map(s => ({
+// Slides come ONLY from the admin panel (hero_slides table).
+const items: SlideItem[] = (await getHeroSlides()).map(s => ({
   url: s.image_url,
   duration: Number(s.duration_ms) || 6000,
   effect: s.effect || 'fade',
 }))
-
-if (items.length === 0) {
-  items = Array.from({ length: 16 }, (_, i) => ({
-    url: withBase(`/gallery/slide-${String(i + 1).padStart(2, '0')}.jpg`),
-    duration: 6000,
-    effect: 'fade',
-  }))
-}
 ---
 
 <section id="hero-slider" class="relative min-h-[88svh] sm:min-h-[90svh] overflow-hidden bg-primary-dark">
@@ -150,7 +142,13 @@ if (items.length === 0) {
         });
         if (!res.ok) return;
         const rows = await res.json();
-        if (!Array.isArray(rows) || rows.length === 0) return;
+        if (!Array.isArray(rows) || rows.length === 0) {
+          // No slides configured in the admin panel — show only the gradient background
+          container.innerHTML = '';
+          clear();
+          index = 0;
+          return;
+        }
 
         const effects = ['fade', 'slide', 'zoom'];
         container.innerHTML = rows.map((row, i) => {
