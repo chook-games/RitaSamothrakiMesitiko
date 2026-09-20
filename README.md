@@ -39,8 +39,14 @@
 
 ## 🔐 Admin Login
 
-- **Email:** `g.tsouhnikas@gmail.com`
-- **Password:** (ορίστηκε κατά τη δημιουργία — Supabase Auth)
+Ο λογαριασμός διαχειριστή **δημιουργείται στο Supabase** (δεν είναι σταθερός κωδικός τύπου `admin`):
+
+1. Άνοιξε το project στο [supabase.com](https://supabase.com) → **Authentication → Users**.
+2. **Add user** → βάλε email + κωδικό, και ενεργοποίησε **Auto Confirm User**.
+   (ή άνοιξε υπάρχοντα χρήστη → **Reset password**)
+3. Συνδέσου στο `/admin/` με αυτό το email/κωδικό.
+
+Αν ο κωδικός χαθεί, η φόρμα σύνδεσης έχει **«Ξέχασα τον κωδικό»** (στέλνει email επαναφοράς, εφόσον υπάρχει ο λογαριασμός).
 
 ## 🗄️ Database Schema
 

@@ -35,13 +35,23 @@ export function useAuth() {
   return { user, loading, error, signIn, signUp, signOut }
 }
 
-export function LoginForm({ onLogin }: { onLogin: (email: string, password: string) => void }) {
+export function LoginForm({ onLogin, error }: { onLogin: (email: string, password: string) => void; error?: string }) {
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
+  const [notice, setNotice] = useState('')
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
     onLogin(email, password)
+  }
+
+  const handleReset = async () => {
+    setNotice('')
+    if (!email) { setNotice('Γράψε πρώτα το email σου.'); return }
+    const { error: resetError } = await supabase.auth.resetPasswordForEmail(email)
+    setNotice(resetError
+      ? 'Σφάλμα: ' + resetError.message
+      : 'Στάλθηκε email επαναφοράς κωδικού (αν υπάρχει ο λογαριασμός).')
   }
 
   return (
@@ -59,6 +69,16 @@ export function LoginForm({ onLogin }: { onLogin: (email: string, password: stri
           </div>
 
           <form onSubmit={handleSubmit} className="space-y-4">
+            {error && (
+              <div className="rounded-xl bg-red-50 border border-red-100 text-red-600 text-sm px-4 py-3">
+                {error}
+              </div>
+            )}
+            {notice && (
+              <div className="rounded-xl bg-blue-50 border border-blue-100 text-blue-700 text-sm px-4 py-3">
+                {notice}
+              </div>
+            )}
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">Email</label>
               <input
@@ -87,7 +107,19 @@ export function LoginForm({ onLogin }: { onLogin: (email: string, password: stri
             >
               Σύνδεση
             </button>
+            <button
+              type="button"
+              onClick={handleReset}
+              className="w-full text-center text-sm text-gray-500 hover:text-primary transition-colors"
+            >
+              Ξέχασα τον κωδικό
+            </button>
           </form>
+
+          <p className="text-xs text-gray-400 text-center mt-6 leading-relaxed">
+            Ο λογαριασμός διαχειριστή δημιουργείται από το Supabase
+            (Authentication → Users). Δεν είναι κοινόχρηστος κωδικός τύπου «admin».
+          </p>
         </div>
       </div>
     </div>

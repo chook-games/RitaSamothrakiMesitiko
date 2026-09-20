@@ -11,7 +11,7 @@ import SlidesManager from './SlidesManager'
 import BulkImport from './BulkImport'
 
 export default function AdminApp() {
-  const { user, loading, signIn, signOut } = useAuth()
+  const { user, loading, error, signIn, signOut } = useAuth()
   const [activeTab, setActiveTab] = useState('dashboard')
   const [listings, setListings] = useState<Listing[]>([])
   const [categories, setCategories] = useState<Category[]>([])
@@ -57,7 +57,7 @@ export default function AdminApp() {
   }
 
   if (!user) {
-    return <LoginForm onLogin={(email, password) => signIn(email, password)} />
+    return <LoginForm onLogin={(email, password) => signIn(email, password)} error={error} />
   }
 
   if (dataLoading) {
