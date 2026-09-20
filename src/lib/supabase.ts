@@ -39,6 +39,7 @@ export interface OfficeSettings {
   hero_duration_ms: number | null
   hero_effect: string | null
   phone: string
+  phones: string[] | null
   email: string
   address: string
   about_text: string
@@ -47,6 +48,7 @@ export interface OfficeSettings {
     facebook?: string
     instagram?: string
     youtube?: string
+    tiktok?: string
   }
   created_at: string
 }
@@ -89,6 +91,13 @@ export interface ListingImage {
   url: string
   order: number
   created_at: string
+}
+
+export function officePhones(settings: OfficeSettings | null): string[] {
+  if (!settings) return []
+  const list = (settings.phones || []).map(p => (p || '').trim()).filter(Boolean)
+  if (list.length > 0) return list
+  return settings.phone ? [settings.phone] : []
 }
 
 export interface HeroSlide {

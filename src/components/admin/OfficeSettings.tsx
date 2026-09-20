@@ -9,7 +9,11 @@ export default function OfficeSettings({ settings: initialSettings, onRefresh }:
 }) {
   const [name, setName] = useState(initialSettings?.name || '')
   const [nameEn, setNameEn] = useState(initialSettings?.name_en || '')
-  const [phone, setPhone] = useState(initialSettings?.phone || '')
+  const [phones, setPhones] = useState<string[]>(
+    initialSettings?.phones && initialSettings.phones.length > 0
+      ? initialSettings.phones
+      : (initialSettings?.phone ? [initialSettings.phone] : [''])
+  )
   const [email, setEmail] = useState(initialSettings?.email || '')
   const [address, setAddress] = useState(initialSettings?.address || '')
   const [aboutText, setAboutText] = useState(initialSettings?.about_text || '')
@@ -17,16 +21,27 @@ export default function OfficeSettings({ settings: initialSettings, onRefresh }:
   const [facebook, setFacebook] = useState(initialSettings?.social_links?.facebook || '')
   const [instagram, setInstagram] = useState(initialSettings?.social_links?.instagram || '')
   const [youtube, setYoutube] = useState(initialSettings?.social_links?.youtube || '')
+  const [tiktok, setTiktok] = useState(initialSettings?.social_links?.tiktok || '')
   const [uploading, setUploading] = useState(false)
   const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' } | null>(null)
   const [logoUrl, setLogoUrl] = useState(initialSettings?.logo_url || '')
   const [logoHeight, setLogoHeight] = useState(initialSettings?.logo_height || 40)
 
+  const updatePhone = (index: number, value: string) => {
+    setPhones(prev => prev.map((p, i) => (i === index ? value : p)))
+  }
+  const addPhone = () => setPhones(prev => [...prev, ''])
+  const removePhone = (index: number) => {
+    setPhones(prev => (prev.length <= 1 ? [''] : prev.filter((_, i) => i !== index)))
+  }
+
   const handleSave = async () => {
+    const cleanPhones = phones.map(p => p.trim()).filter(Boolean)
     const data = {
       name,
       name_en: nameEn || null,
-      phone,
+      phone: cleanPhones[0] || '',
+      phones: cleanPhones,
       email,
       address,
       about_text: aboutText,
@@ -37,6 +52,7 @@ export default function OfficeSettings({ settings: initialSettings, onRefresh }:
         facebook: facebook || null,
         instagram: instagram || null,
         youtube: youtube || null,
+        tiktok: tiktok || null,
       },
     }
     console.log('[OfficeSettings] Saving data:', data)
@@ -101,26 +117,48 @@ export default function OfficeSettings({ settings: initialSettings, onRefresh }:
                   placeholder="Rita Samothraki Real Estate"
                 />
               </div>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Τηλέφωνο</label>
-                  <input
-                    type="text" value={phone}
-                    onChange={e => setPhone(e.target.value)}
-                    className="w-full px-4 py-2.5 rounded-xl border border-gray-300 focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none text-sm"
-                    placeholder="210 0000 000"
-                  />
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Τηλέφωνα</label>
+                <div className="space-y-2">
+                  {phones.map((p, i) => (
+                    <div key={i} className="flex items-center gap-2">
+                      <input
+                        type="text"
+                        value={p}
+                        onChange={e => updatePhone(i, e.target.value)}
+                        className="flex-1 px-4 py-2.5 rounded-xl border border-gray-300 focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none text-sm"
+                        placeholder="210 0000 000"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => removePhone(i)}
+                        disabled={phones.length <= 1}
+                        className="p-2.5 rounded-xl text-gray-400 hover:text-red-600 hover:bg-red-50 transition-colors disabled:opacity-40 disabled:hover:text-gray-400 disabled:hover:bg-transparent"
+                        title="Αφαίρεση"
+                      >
+                        <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20 12H4"/></svg>
+                      </button>
+                    </div>
+                  ))}
                 </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Email</label>
-                  <input
-                    type="email" value={email}
+                <button
+                  type="button"
+                  onClick={addPhone}
+                  className="mt-2 inline-flex items-center gap-2 px-4 py-2.5 bg-gray-100 text-gray-700 text-sm font-medium rounded-xl hover:bg-gray-200 transition-colors"
+                >
+                  <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4"/></svg>
+                  Προσθήκη τηλεφώνου
+                </button>
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Email</label>
+                <input
+                  type="email" value={email}
                     onChange={e => setEmail(e.target.value)}
                     className="w-full px-4 py-2.5 rounded-xl border border-gray-300 focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none text-sm"
                     placeholder="info@example.com"
                   />
                 </div>
-              </div>
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">Διεύθυνση</label>
                 <input
@@ -182,6 +220,15 @@ export default function OfficeSettings({ settings: initialSettings, onRefresh }:
                   onChange={e => setYoutube(e.target.value)}
                   className="w-full px-4 py-2.5 rounded-xl border border-gray-300 focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none text-sm"
                   placeholder="https://youtube.com/..."
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">TikTok URL</label>
+                <input
+                  type="text" value={tiktok}
+                  onChange={e => setTiktok(e.target.value)}
+                  className="w-full px-4 py-2.5 rounded-xl border border-gray-300 focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none text-sm"
+                  placeholder="https://tiktok.com/@..."
                 />
               </div>
             </div>

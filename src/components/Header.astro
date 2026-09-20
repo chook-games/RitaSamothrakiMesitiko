@@ -1,5 +1,5 @@
 ---
-import { getCategories, getOfficeSettings } from '../lib/supabase'
+import { getCategories, getOfficeSettings, officePhones } from '../lib/supabase'
 import type { Category } from '../lib/supabase'
 import { t, localizePath, withBase, pick, type Lang } from '../i18n/utils'
 
@@ -11,6 +11,8 @@ const lang: Lang = Astro.props.lang ?? 'el'
 
 const categories = await getCategories()
 const settings = await getOfficeSettings()
+
+const phones = officePhones(settings)
 
 const logoHeight = Number(settings?.logo_height) || 40
 
@@ -110,11 +112,17 @@ const enHref = withBase(`/en${pathNoLang === '/' ? '' : pathNoLang}`)
           <a href={enHref} class={`px-2.5 py-1.5 rounded-lg transition-colors ${lang === 'en' ? 'bg-primary text-white' : 'text-gray-500 hover:text-primary'}`}>EN</a>
         </div>
 
-        <!-- Contact Button Desktop -->
-        <a id="header-phone-link" href={`tel:${settings?.phone || '2100000000'}`} class="hidden lg:inline-flex items-center gap-2 px-5 py-2.5 bg-primary text-white text-sm font-medium rounded-xl hover:bg-primary-light transition-colors shadow-sm">
-          <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z"/></svg>
-          <span id="header-phone-text">{settings?.phone || '210 0000 000'}</span>
-        </a>
+        <!-- Contact Buttons Desktop -->
+        {(phones.length > 0 ? phones : ['210 0000 000']).map((ph, i) => (
+          <a
+            id={i === 0 ? 'header-phone-link' : undefined}
+            href={`tel:${phones.length > 0 ? ph : '2100000000'}`}
+            class="hidden lg:inline-flex items-center gap-2 px-5 py-2.5 bg-primary text-white text-sm font-medium rounded-xl hover:bg-primary-light transition-colors shadow-sm"
+          >
+            <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z"/></svg>
+            <span id={i === 0 ? 'header-phone-text' : undefined}>{ph}</span>
+          </a>
+        ))}
 
         <!-- Mobile menu button -->
         <button id="mobile-menu-btn" class="lg:hidden p-2 rounded-lg text-gray-600 hover:text-primary hover:bg-gray-100 transition-colors" aria-label={t(lang, 'nav.menu')}>
@@ -175,11 +183,17 @@ const enHref = withBase(`/en${pathNoLang === '/' ? '' : pathNoLang}`)
         <a href={enHref} class={`flex-1 text-center px-3 py-2 text-sm font-semibold rounded-xl border ${lang === 'en' ? 'bg-primary text-white border-primary' : 'text-gray-600 border-gray-200'}`}>English</a>
       </div>
 
-      <div class="border-t border-gray-100 pt-3 mt-2">
-        <a id="mobile-phone-link" href={`tel:${settings?.phone || '2100000000'}`} class="flex items-center justify-center gap-2 px-4 py-3 bg-primary text-white text-sm font-medium rounded-xl hover:bg-primary-light transition-colors">
-          <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z"/></svg>
-          <span id="mobile-phone-text">{settings?.phone || '210 0000 000'}</span>
-        </a>
+      <div class="border-t border-gray-100 pt-3 mt-2 space-y-2">
+        {(phones.length > 0 ? phones : ['210 0000 000']).map((ph, i) => (
+          <a
+            id={i === 0 ? 'mobile-phone-link' : undefined}
+            href={`tel:${phones.length > 0 ? ph : '2100000000'}`}
+            class="flex items-center justify-center gap-2 px-4 py-3 bg-primary text-white text-sm font-medium rounded-xl hover:bg-primary-light transition-colors"
+          >
+            <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z"/></svg>
+            <span id={i === 0 ? 'mobile-phone-text' : undefined}>{ph}</span>
+          </a>
+        ))}
       </div>
     </div>
   </div>
