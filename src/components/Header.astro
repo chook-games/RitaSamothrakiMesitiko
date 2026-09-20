@@ -126,8 +126,8 @@ const enHref = withBase(`/en${pathNoLang === '/' ? '' : pathNoLang}`)
   </div>
 
   <!-- Mobile Menu -->
-  <div id="mobile-menu" class="lg:hidden hidden max-h-0 overflow-hidden transition-all duration-300 border-t border-gray-100">
-    <div class="px-4 py-3 space-y-1">
+  <div id="mobile-menu" class="lg:hidden max-h-0 overflow-hidden transition-all duration-300">
+    <div class="px-4 py-3 space-y-1 border-t border-gray-100">
       <a href={localizePath('/', lang)} class="block px-3 py-2.5 rounded-lg text-sm font-medium text-gray-700 hover:text-primary hover:bg-gray-50">
         {t(lang, 'nav.home')}
       </a>
@@ -190,19 +190,28 @@ const enHref = withBase(`/en${pathNoLang === '/' ? '' : pathNoLang}`)
   const iconOpen = document.getElementById('menu-icon-open');
   const iconClose = document.getElementById('menu-icon-close');
 
-  menuBtn.addEventListener('click', () => {
-    const isOpen = mobileMenu.classList.contains('max-h-[600px]');
-    if (isOpen) {
-      mobileMenu.classList.remove('max-h-[600px]', 'overflow-y-auto');
-      mobileMenu.classList.add('max-h-0');
-      iconOpen.classList.remove('hidden');
-      iconClose.classList.add('hidden');
-    } else {
+  const isMenuOpen = () => mobileMenu?.classList.contains('max-h-[600px]');
+
+  const setMenu = (open) => {
+    if (!mobileMenu) return;
+    if (open) {
       mobileMenu.classList.remove('max-h-0');
       mobileMenu.classList.add('max-h-[600px]', 'overflow-y-auto');
-      iconOpen.classList.add('hidden');
-      iconClose.classList.remove('hidden');
+      iconOpen?.classList.add('hidden');
+      iconClose?.classList.remove('hidden');
+    } else {
+      mobileMenu.classList.remove('max-h-[600px]', 'overflow-y-auto');
+      mobileMenu.classList.add('max-h-0');
+      iconOpen?.classList.remove('hidden');
+      iconClose?.classList.add('hidden');
     }
+  };
+
+  menuBtn?.addEventListener('click', () => setMenu(!isMenuOpen()));
+
+  // Close the mobile menu after tapping a link
+  mobileMenu?.querySelectorAll('a').forEach(link => {
+    link.addEventListener('click', () => setMenu(false));
   });
 
   // Mobile submenu toggle
@@ -210,8 +219,9 @@ const enHref = withBase(`/en${pathNoLang === '/' ? '' : pathNoLang}`)
     btn.addEventListener('click', () => {
       const target = document.getElementById(btn.dataset.target);
       const arrow = btn.querySelector('svg');
+      if (!target) return;
       target.classList.toggle('hidden');
-      arrow.classList.toggle('rotate-180');
+      arrow?.classList.toggle('rotate-180');
     });
   });
 

@@ -34,7 +34,7 @@ const lang = (Astro.currentLocale as Lang) ?? 'el'
     <meta name="generator" content={Astro.generator} />
     <title>{title}</title>
   </head>
-  <body class="min-h-screen bg-white text-gray-900 antialiased flex flex-col">
+  <body class="min-h-screen bg-white text-gray-900 antialiased flex flex-col overflow-x-hidden">
     {!hideHeader && <Header lang={lang} />}
     <main class="flex-1">
       <slot />
