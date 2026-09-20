@@ -7,7 +7,8 @@ import tailwindcss from '@tailwindcss/vite';
 // GitHub Actions sets GITHUB_ACTIONS=true automatically; Cloudflare Pages does not,
 // so on Cloudflare (or any root domain) base = '/'.
 const isGhPages = process.env.GITHUB_ACTIONS === 'true' || process.env.DEPLOY_TARGET === 'ghpages';
-const site = process.env.PUBLIC_SITE_URL || 'https://chook-games.github.io';
+const site = process.env.PUBLIC_SITE_URL
+  || (isGhPages ? 'https://chook-games.github.io' : 'https://realestate-samothraki.gr');
 
 // https://astro.build/config
 export default defineConfig({
