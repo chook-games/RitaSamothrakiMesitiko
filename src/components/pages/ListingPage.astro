@@ -234,7 +234,7 @@ const imagesJson = JSON.stringify(imageData).replace(/</g, '\\u003c')
 
       <!-- Thumbnails list (2 columns) -->
       <div class="lg:w-64 flex-shrink-0 bg-black/40 lg:bg-black/30 border-t lg:border-t-0 lg:border-l border-white/10 flex">
-        <div id="lightbox-thumbs" class="grid grid-cols-2 gap-3 p-3 w-full overflow-y-auto content-start max-h-44 lg:max-h-none lg:h-full"></div>
+        <div id="lightbox-thumbs" class="grid grid-cols-2 gap-4 p-4 w-full overflow-y-auto content-start items-start max-h-48 lg:max-h-none lg:h-full [grid-auto-rows:max-content]"></div>
       </div>
     </div>
     <button id="lightbox-close" class="absolute top-3 right-3 z-10 w-10 h-10 rounded-full bg-white/10 hover:bg-white/25 text-white flex items-center justify-center" aria-label="Κλείσιμο">
@@ -292,8 +292,8 @@ const imagesJson = JSON.stringify(imageData).replace(/</g, '\\u003c')
     const buildThumbs = () => {
       if (!thumbsEl) return;
       thumbsEl.innerHTML = data.map((img, i) =>
-        `<button type="button" data-lb-thumb="${i}" class="block w-full aspect-square rounded-lg overflow-hidden border-2 transition-colors border-transparent">` +
-        `<img src="${img.url}" alt="" class="w-full h-full object-cover" /></button>`
+        `<button type="button" data-lb-thumb="${i}" class="relative block w-full aspect-square rounded-lg overflow-hidden border-2 transition-colors border-transparent">` +
+        `<img src="${img.url}" alt="" class="absolute inset-0 w-full h-full object-cover" /></button>`
       ).join('');
       thumbsEl.querySelectorAll('[data-lb-thumb]').forEach(btn => {
         btn.addEventListener('click', () => {
