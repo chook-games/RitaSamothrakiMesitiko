@@ -43,6 +43,7 @@ const imageData = images.map(img => ({
   title: pick(lang, img.title_el, img.title_en),
 }))
 const mainImage = imageData[0]?.url || null
+const mainTitle = imageData[0]?.title || ''
 
 const listingTitle = pick(lang, listing.title, listing.title_en)
 const listingDescription = pick(lang, listing.description, listing.description_en)
@@ -59,7 +60,7 @@ const imagesJson = JSON.stringify(imageData).replace(/</g, '\\u003c')
   <div class="bg-gray-50 min-h-screen">
     <!-- Breadcrumb -->
     <div class="bg-white border-b border-gray-200">
-      <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-3">
+      <div class="max-w-[1400px] mx-auto px-4 sm:px-6 lg:px-8 py-3">
         <div class="flex items-center gap-2 text-sm text-gray-400">
           <a href={localizePath('/', lang)} class="hover:text-primary">{t(lang, 'nav.home')}</a>
           <span>/</span>
@@ -76,54 +77,65 @@ const imagesJson = JSON.stringify(imageData).replace(/</g, '\\u003c')
       </div>
     </div>
 
-    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 md:py-10">
-      <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+    <div class="max-w-[1400px] mx-auto px-4 sm:px-6 lg:px-8 py-6 md:py-10">
+      <div class="grid grid-cols-1 lg:grid-cols-5 gap-6 lg:gap-8">
         <!-- Left: Gallery + Video -->
-        <div class="lg:col-span-2 space-y-5">
+        <div class="lg:col-span-3 space-y-5">
           <!-- Main Image -->
-          <button
-            type="button"
-            data-open-lightbox
-            data-index="0"
-            class="group relative block w-full bg-white rounded-2xl overflow-hidden shadow-sm border border-gray-100"
-            aria-label="Άνοιγμα gallery"
-          >
-            {mainImage ? (
-              <div class="relative aspect-[16/10]">
-                <img id="main-image" src={mainImage} alt={listingTitle} class="w-full h-full object-cover" />
-                <span class="absolute inset-0 bg-black/0 group-hover:bg-black/10 transition-colors"></span>
-                <span class="absolute bottom-3 right-3 inline-flex items-center gap-1.5 px-3 py-1.5 bg-black/60 text-white text-xs font-medium rounded-lg opacity-0 group-hover:opacity-100 transition-opacity">
-                  <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 8V4m0 0h4M4 4l5 5m11-1V4m0 0h-4m4 0l-5 5M4 16v4m0 0h4m-4 0l5-5m11 5l-5-5m5 5v-4m0 4h-4"/></svg>
-                  Gallery ({imageData.length})
-                </span>
-              </div>
-            ) : (
-              <div class="aspect-[16/10] bg-gray-100 flex items-center justify-center">
-                <svg class="w-24 h-24 text-gray-300" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                </svg>
-              </div>
-            )}
-          </button>
+          <div class="bg-white rounded-2xl overflow-hidden shadow-sm border border-gray-100">
+            <div id="main-image-title-wrap" class={`px-4 py-2.5 bg-primary text-white text-sm font-semibold tracking-wide ${mainTitle ? '' : 'hidden'}`}>
+              <span id="main-image-title">{mainTitle}</span>
+            </div>
+            <div class="relative aspect-[16/10] bg-gray-100">
+              <button type="button" id="main-image-btn" class="block w-full h-full" aria-label="Άνοιγμα gallery">
+                {mainImage ? (
+                  <img id="main-image" src={mainImage} alt={listingTitle} class="w-full h-full object-cover" />
+                ) : (
+                  <span class="w-full h-full flex items-center justify-center">
+                    <svg class="w-24 h-24 text-gray-300" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                    </svg>
+                  </span>
+                )}
+              </button>
 
-          <!-- Thumbnail strip (horizontal scroll with arrows) -->
+              {imageData.length > 1 && (
+                <>
+                  <button id="main-prev" class="absolute left-3 top-1/2 -translate-y-1/2 w-10 h-10 rounded-full bg-white/90 hover:bg-white text-gray-700 shadow-md flex items-center justify-center" aria-label="Προηγούμενη">
+                    <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/></svg>
+                  </button>
+                  <button id="main-next" class="absolute right-3 top-1/2 -translate-y-1/2 w-10 h-10 rounded-full bg-white/90 hover:bg-white text-gray-700 shadow-md flex items-center justify-center" aria-label="Επόμενη">
+                    <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg>
+                  </button>
+                  <span id="main-counter" class="absolute bottom-3 right-3 px-2.5 py-1 bg-black/60 text-white text-xs font-medium rounded-lg">1 / {imageData.length}</span>
+                </>
+              )}
+            </div>
+          </div>
+
+          <!-- Thumbnails: 2 rows, horizontal scroll with arrows -->
           {images.length > 1 && (
             <div class="relative">
-              <button data-strip-prev class="absolute left-0 top-1/2 -translate-y-1/2 z-10 w-9 h-9 -ml-1 flex items-center justify-center rounded-full bg-white shadow-md border border-gray-200 text-gray-600 hover:text-primary" aria-label="Προηγούμενες">
+              <button data-strip-prev class="absolute left-0 top-1/2 -translate-y-1/2 z-10 w-9 h-9 flex items-center justify-center rounded-full bg-white shadow-md border border-gray-200 text-gray-600 hover:text-primary" aria-label="Προηγούμενες">
                 <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/></svg>
               </button>
-              <button data-strip-next class="absolute right-0 top-1/2 -translate-y-1/2 z-10 w-9 h-9 -mr-1 flex items-center justify-center rounded-full bg-white shadow-md border border-gray-200 text-gray-600 hover:text-primary" aria-label="Επόμενες">
+              <button data-strip-next class="absolute right-0 top-1/2 -translate-y-1/2 z-10 w-9 h-9 flex items-center justify-center rounded-full bg-white shadow-md border border-gray-200 text-gray-600 hover:text-primary" aria-label="Επόμενες">
                 <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg>
               </button>
-              <div id="thumb-strip" class="flex gap-2 overflow-x-auto scroll-smooth px-10 py-1">
+              <div id="thumb-grid" class="grid grid-rows-2 grid-flow-col auto-cols-[8rem] gap-2 overflow-x-auto scroll-smooth px-10 py-1">
                 {imageData.map((img, i) => (
                   <button
                     type="button"
-                    data-open-lightbox
+                    data-thumb
                     data-index={i}
-                    class="flex-shrink-0 w-28 h-20 rounded-xl overflow-hidden bg-gray-100 border border-gray-200 hover:border-primary transition-colors"
+                    class={`relative h-20 rounded-xl overflow-hidden bg-gray-100 border-2 transition-colors ${i === 0 ? 'border-primary' : 'border-transparent hover:border-primary/50'}`}
                   >
                     <img src={img.url} alt={img.title} class="w-full h-full object-cover" loading="lazy" />
+                    {img.title && (
+                      <span class="absolute inset-x-0 bottom-0 bg-black/55 text-white text-[10px] leading-tight px-1.5 py-1 text-left truncate backdrop-blur-[1px]">
+                        {img.title}
+                      </span>
+                    )}
                   </button>
                 ))}
               </div>
@@ -147,7 +159,7 @@ const imagesJson = JSON.stringify(imageData).replace(/</g, '\\u003c')
         </div>
 
         <!-- Right: Info + Description + Contact -->
-        <div class="space-y-6">
+        <div class="lg:col-span-2 space-y-6">
           <div class="bg-white rounded-2xl p-6 md:p-8 shadow-sm border border-gray-100 lg:sticky lg:top-24">
             <div class="flex items-center gap-2 mb-4">
               {listing.code && (
@@ -175,7 +187,7 @@ const imagesJson = JSON.stringify(imageData).replace(/</g, '\\u003c')
             <div class="border-t border-gray-100 pt-5 mb-5">
               <h2 class="text-base font-bold text-gray-900 mb-2">{t(lang, 'detail.description')}</h2>
               {listingDescription ? (
-                <p class="text-sm text-gray-600 leading-relaxed whitespace-pre-line max-h-72 overflow-y-auto pr-1">{listingDescription}</p>
+                <p class="text-sm text-gray-600 leading-relaxed whitespace-pre-line">{listingDescription}</p>
               ) : (
                 <p class="text-sm text-gray-400 italic">{t(lang, 'detail.noDescription')}</p>
               )}
@@ -204,20 +216,20 @@ const imagesJson = JSON.stringify(imageData).replace(/</g, '\\u003c')
     <div class="absolute inset-0" data-lightbox-backdrop></div>
     <div class="relative h-full flex flex-col lg:flex-row">
       <!-- Large image -->
-      <div class="relative flex-1 flex items-center justify-center p-4 lg:p-8">
-        <img id="lightbox-image" src="" alt="" class="max-w-full max-h-[70vh] lg:max-h-[85vh] object-contain" />
+      <div class="relative flex-1 flex flex-col items-center justify-center p-4 lg:p-8">
+        <div id="lightbox-caption" class="mb-3 max-w-[90%] px-4 py-2 bg-white/10 border border-white/20 backdrop-blur-sm text-white text-sm font-medium rounded-xl shadow-lg text-center hidden"></div>
+        <img id="lightbox-image" src="" alt="" class="max-w-full max-h-[62vh] lg:max-h-[78vh] object-contain rounded-lg shadow-2xl" />
         <button id="lightbox-prev" class="absolute left-3 lg:left-6 top-1/2 -translate-y-1/2 w-11 h-11 rounded-full bg-white/10 hover:bg-white/25 text-white backdrop-blur-sm border border-white/20 flex items-center justify-center" aria-label="Προηγούμενη">
           <svg class="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/></svg>
         </button>
         <button id="lightbox-next" class="absolute right-3 lg:right-6 top-1/2 -translate-y-1/2 w-11 h-11 rounded-full bg-white/10 hover:bg-white/25 text-white backdrop-blur-sm border border-white/20 flex items-center justify-center" aria-label="Επόμενη">
           <svg class="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg>
         </button>
-        <div id="lightbox-caption" class="absolute bottom-3 left-1/2 -translate-x-1/2 px-4 py-2 bg-black/60 text-white text-sm rounded-lg max-w-[90%] text-center"></div>
       </div>
 
-      <!-- Thumbnails list -->
-      <div class="lg:w-64 flex-shrink-0 bg-black/40 lg:bg-black/30 border-t lg:border-t-0 lg:border-l border-white/10">
-        <div class="flex lg:flex-col items-center gap-2 p-3 overflow-x-auto lg:overflow-y-auto lg:h-full" id="lightbox-thumbs"></div>
+      <!-- Thumbnails list (2 columns on desktop) -->
+      <div class="lg:w-64 flex-shrink-0 bg-black/40 lg:bg-black/30 border-t lg:border-t-0 lg:border-l border-white/10 max-h-32 lg:max-h-none">
+        <div id="lightbox-thumbs" class="flex lg:grid lg:grid-cols-2 gap-2 p-3 overflow-x-auto lg:overflow-y-auto lg:h-full"></div>
       </div>
     </div>
     <button id="lightbox-close" class="absolute top-3 right-3 z-10 w-10 h-10 rounded-full bg-white/10 hover:bg-white/25 text-white flex items-center justify-center" aria-label="Κλείσιμο">
@@ -240,12 +252,44 @@ const imagesJson = JSON.stringify(imageData).replace(/</g, '\\u003c')
     const imageEl = document.getElementById('lightbox-image');
     const captionEl = document.getElementById('lightbox-caption');
     const thumbsEl = document.getElementById('lightbox-thumbs');
+
+    const mainImageEl = document.getElementById('main-image');
+    const mainTitleWrap = document.getElementById('main-image-title-wrap');
+    const mainTitleEl = document.getElementById('main-image-title');
+    const mainCounter = document.getElementById('main-counter');
+    const mainThumbs = Array.from(document.querySelectorAll('[data-thumb]'));
+
+    let mainIndex = 0;
     let index = 0;
+
+    const setMain = (i) => {
+      if (data.length === 0) return;
+      mainIndex = (i + data.length) % data.length;
+      const item = data[mainIndex];
+      if (mainImageEl) { mainImageEl.src = item.url; mainImageEl.alt = item.title || ''; }
+      if (mainTitleEl) mainTitleEl.textContent = item.title || '';
+      if (mainTitleWrap) mainTitleWrap.classList.toggle('hidden', !item.title);
+      if (mainCounter) mainCounter.textContent = `${mainIndex + 1} / ${data.length}`;
+      mainThumbs.forEach((btn, idx) => {
+        const active = idx === mainIndex;
+        btn.classList.toggle('border-primary', active);
+        btn.classList.toggle('border-transparent', !active);
+        btn.classList.toggle('hover:border-primary/50', !active);
+      });
+    };
+
+    // Inline thumbnails just change the main image (no lightbox)
+    mainThumbs.forEach(btn => {
+      btn.addEventListener('click', () => setMain(Number(btn.getAttribute('data-index'))));
+    });
+    document.getElementById('main-prev')?.addEventListener('click', (e) => { e.stopPropagation(); setMain(mainIndex - 1); });
+    document.getElementById('main-next')?.addEventListener('click', (e) => { e.stopPropagation(); setMain(mainIndex + 1); });
+    document.getElementById('main-image-btn')?.addEventListener('click', () => open(mainIndex));
 
     const buildThumbs = () => {
       if (!thumbsEl) return;
       thumbsEl.innerHTML = data.map((img, i) =>
-        `<button type="button" data-lb-thumb="${i}" class="flex-shrink-0 w-20 h-16 lg:w-full lg:h-20 rounded-lg overflow-hidden border-2 transition-colors border-transparent">` +
+        `<button type="button" data-lb-thumb="${i}" class="flex-shrink-0 w-16 h-16 lg:w-full lg:h-auto lg:aspect-square rounded-lg overflow-hidden border-2 transition-colors border-transparent">` +
         `<img src="${img.url}" alt="" class="w-full h-full object-cover" /></button>`
       ).join('');
       thumbsEl.querySelectorAll('[data-lb-thumb]').forEach(btn => {
@@ -261,7 +305,7 @@ const imagesJson = JSON.stringify(imageData).replace(/</g, '\\u003c')
       if (imageEl) { imageEl.src = item.url; imageEl.alt = item.title || ''; }
       if (captionEl) {
         captionEl.textContent = item.title || '';
-        captionEl.style.display = item.title ? '' : 'none';
+        captionEl.classList.toggle('hidden', !item.title);
       }
       if (thumbsEl) {
         thumbsEl.querySelectorAll('[data-lb-thumb]').forEach((btn, i) => {
@@ -273,7 +317,7 @@ const imagesJson = JSON.stringify(imageData).replace(/</g, '\\u003c')
       }
     };
 
-    const open = (i: number) => {
+    const open = (i) => {
       index = (i + data.length) % data.length;
       if (lightbox) lightbox.classList.remove('hidden');
       document.body.style.overflow = 'hidden';
@@ -282,13 +326,11 @@ const imagesJson = JSON.stringify(imageData).replace(/</g, '\\u003c')
     const close = () => {
       if (lightbox) lightbox.classList.add('hidden');
       document.body.style.overflow = '';
+      setMain(index);
     };
     const next = () => { index = (index + 1) % data.length; render(); };
     const prev = () => { index = (index - 1 + data.length) % data.length; render(); };
 
-    document.querySelectorAll('[data-open-lightbox]').forEach(el => {
-      el.addEventListener('click', () => open(Number(el.getAttribute('data-index') || 0)));
-    });
     document.getElementById('lightbox-next')?.addEventListener('click', next);
     document.getElementById('lightbox-prev')?.addEventListener('click', prev);
     document.getElementById('lightbox-close')?.addEventListener('click', close);
@@ -301,11 +343,12 @@ const imagesJson = JSON.stringify(imageData).replace(/</g, '\\u003c')
       else if (e.key === 'ArrowLeft') prev();
     });
 
-    // Inline thumbnail strip arrows
-    const strip = document.getElementById('thumb-strip');
-    document.querySelector('[data-strip-prev]')?.addEventListener('click', () => strip?.scrollBy({ left: -300, behavior: 'smooth' }));
-    document.querySelector('[data-strip-next]')?.addEventListener('click', () => strip?.scrollBy({ left: 300, behavior: 'smooth' }));
+    // Thumbnail grid arrows
+    const strip = document.getElementById('thumb-grid');
+    document.querySelector('[data-strip-prev]')?.addEventListener('click', () => strip?.scrollBy({ left: -320, behavior: 'smooth' }));
+    document.querySelector('[data-strip-next]')?.addEventListener('click', () => strip?.scrollBy({ left: 320, behavior: 'smooth' }));
 
     buildThumbs();
+    setMain(0);
   })();
 </script>
