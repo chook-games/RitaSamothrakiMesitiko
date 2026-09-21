@@ -1,0 +1,16 @@
+---
+import ListPage from '../../../components/pages/ListPage.astro'
+import { getCategories } from '../../../lib/supabase'
+
+export async function getStaticPaths() {
+  const categories = await getCategories('enoikiasi')
+  return categories.filter(c => !c.parent_id).map(cat => ({
+    params: { slug: cat.slug },
+    props: { category: cat },
+  }))
+}
+
+const { category } = Astro.props
+---
+
+<ListPage type="enoikiasi" category={category} lang="de" />

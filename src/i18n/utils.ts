@@ -1,11 +1,11 @@
-import { ui, defaultLang, type Lang, type UIKey } from './ui'
+import { ui, defaultLang, languages, type Lang, type UIKey } from './ui'
 
 export type { Lang, UIKey }
 export { languages, defaultLang } from './ui'
 
 export function getLangFromUrl(url: URL): Lang {
   const [, maybeLang] = url.pathname.split('/')
-  if (maybeLang === 'en') return 'en'
+  if (maybeLang && maybeLang in languages) return maybeLang as Lang
   return defaultLang
 }
 
@@ -22,8 +22,8 @@ export function t(lang: Lang, key: UIKey, vars?: Record<string, string | number>
 }
 
 export function pick(lang: Lang, el?: string | null, en?: string | null): string {
-  if (lang === 'en') return (en && en.trim()) || el || ''
-  return el || en || ''
+  if (lang === 'el') return el || en || ''
+  return en || el || ''
 }
 
 export function withBase(path: string): string {  const base = (import.meta.env.BASE_URL || '/').replace(/\/$/, '')

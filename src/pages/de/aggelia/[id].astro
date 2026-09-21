@@ -1,0 +1,18 @@
+---
+import ListingPage from '../../../components/pages/ListingPage.astro'
+import { supabase, IS_PLACEHOLDER } from '../../../lib/supabase'
+
+export async function getStaticPaths() {
+  if (IS_PLACEHOLDER) return []
+  const { data: listings } = await supabase.from('listings').select('id')
+  if (!listings) return []
+  return listings.map(listing => ({
+    params: { id: listing.id },
+    props: { listingId: listing.id },
+  }))
+}
+
+const { listingId } = Astro.props
+---
+
+<ListingPage listingId={listingId} lang="de" />

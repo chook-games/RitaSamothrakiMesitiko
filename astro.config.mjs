@@ -16,7 +16,7 @@ export default defineConfig({
   base: isGhPages ? '/RitaSamothrakiMesitiko' : '/',
   i18n: {
     defaultLocale: 'el',
-    locales: ['el', 'en'],
+    locales: ['el', 'en', 'de'],
     routing: {
       prefixDefaultLocale: false,
     },

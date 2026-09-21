@@ -9,13 +9,15 @@ export interface Props {
   description?: string
   hideHeader?: boolean
   hideFooter?: boolean
+  disableLangDetect?: boolean
 }
 
 const {
   title = 'Rita Samothraki - Μεσιτικό Γραφείο',
   description = 'Επαγγελματικές υπηρεσίες μεσιτείας με αξιοπιστία και εμπειρία',
   hideHeader = false,
-  hideFooter = false
+  hideFooter = false,
+  disableLangDetect = false
 } = Astro.props
 
 const lang = (Astro.currentLocale as Lang) ?? 'el'
@@ -40,5 +42,54 @@ const lang = (Astro.currentLocale as Lang) ?? 'el'
       <slot />
     </main>
     {!hideFooter && <Footer lang={lang} />}
+
+    {!disableLangDetect && (
+    <script>
+      // Auto-detect visitor country once: Greece → Greek, German-speaking → German, otherwise English.
+      // Skipped if the user has manually chosen a language before.
+      (() => {
+        try {
+          if (localStorage.getItem('langChosen')) return;
+          if (sessionStorage.getItem('langAuto')) return;
+
+          const base = (import.meta.env.BASE_URL || '/').replace(/\/$/, '');
+          let p = location.pathname;
+          if (base && p.startsWith(base)) p = p.slice(base.length);
+          if (!p.startsWith('/')) p = '/' + p;
+
+          const locales = ['en', 'de'];
+          const parts = p.split('/').filter(Boolean);
+          const seg = parts[0];
+          const current = locales.includes(seg) ? seg : 'el';
+          const restParts = locales.includes(seg) ? parts.slice(1) : parts;
+          const rest = restParts.length ? '/' + restParts.join('/') + (p.endsWith('/') ? '/' : '') : '/';
+
+          const redirectTo = (target) => {
+            if (target === current) return;
+            const targetPath = target === 'el' ? rest : (rest === '/' ? `/${target}/` : `/${target}${rest}`);
+            try { sessionStorage.setItem('langAuto', '1'); } catch (e) {}
+            location.replace(base + targetPath);
+          };
+
+          const targetForCountry = (country) => {
+            if (country === 'GR') return 'el';
+            if (['DE', 'AT', 'CH'].includes(country)) return 'de';
+            return 'en';
+          };
+
+          fetch('/cdn-cgi/trace', { cache: 'no-store' })
+            .then(r => (r.ok ? r.text() : Promise.reject()))
+            .then(t => {
+              const m = t.match(/^loc=([A-Z]+)/m);
+              redirectTo(targetForCountry(m ? m[1] : ''));
+            })
+            .catch(() => {
+              const l = (navigator.language || '').toLowerCase();
+              redirectTo(l.startsWith('el') ? 'el' : l.startsWith('de') ? 'de' : 'en');
+            });
+        } catch (e) {}
+      })();
+    </script>
+    )}
   </body>
 </html>
