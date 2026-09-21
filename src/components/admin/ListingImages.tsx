@@ -2,6 +2,7 @@ import React, { useEffect, useRef, useState } from 'react'
 import { supabase } from '../../lib/supabase'
 import type { Listing, ListingImage } from '../../lib/supabase'
 import { sortImages } from '../../lib/supabase'
+import { compressImage } from '../../lib/imageCompress'
 import { Toast } from './shared'
 
 export default function ListingImages({ listing }: { listing: Listing }) {
@@ -71,9 +72,10 @@ export default function ListingImages({ listing }: { listing: Listing }) {
 
     for (const file of files) {
       order++
-      const ext = file.name.split('.').pop()
+      const compressed = await compressImage(file, 1600, 0.8)
+      const ext = compressed.type === 'image/jpeg' ? 'jpg' : (file.name.split('.').pop() || 'jpg')
       const path = `${listing.id}/${Date.now()}_${order}.${ext}`
-      const { error: uploadError } = await supabase.storage.from('listings').upload(path, file, { upsert: true })
+      const { error: uploadError } = await supabase.storage.from('listings').upload(path, compressed, { upsert: true, contentType: compressed.type || 'image/jpeg' })
       if (uploadError) { setToast({ message: 'Σφάλμα upload: ' + uploadError.message, type: 'error' }); continue }
       const { data } = supabase.storage.from('listings').getPublicUrl(path)
       const { data: inserted, error: insertError } = await supabase

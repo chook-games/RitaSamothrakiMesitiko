@@ -1,6 +1,7 @@
 import React, { useEffect, useRef, useState } from 'react'
 import { supabase } from '../../lib/supabase'
 import type { HeroSlide } from '../../lib/supabase'
+import { compressImage } from '../../lib/imageCompress'
 import { Toast } from './shared'
 
 const EFFECTS = [
@@ -51,9 +52,10 @@ export default function SlidesManager() {
 
     for (const file of files) {
       order++
-      const ext = file.name.split('.').pop()
+      const compressed = await compressImage(file, 1920, 0.82)
+      const ext = compressed.type === 'image/jpeg' ? 'jpg' : (file.name.split('.').pop() || 'jpg')
       const path = `hero/${Date.now()}_${order}.${ext}`
-      const { error: uploadError } = await supabase.storage.from('listings').upload(path, file, { upsert: true })
+      const { error: uploadError } = await supabase.storage.from('listings').upload(path, compressed, { upsert: true, contentType: compressed.type || 'image/jpeg' })
       if (uploadError) { setToast({ message: 'Σφάλμα upload: ' + uploadError.message, type: 'error' }); continue }
       const { data } = supabase.storage.from('listings').getPublicUrl(path)
       const { error: insertError } = await supabase.from('hero_slides').insert({

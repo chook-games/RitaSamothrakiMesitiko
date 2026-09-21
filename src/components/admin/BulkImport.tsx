@@ -2,6 +2,7 @@ import React, { useMemo, useState } from 'react'
 import { supabase } from '../../lib/supabase'
 import type { Category } from '../../lib/supabase'
 import { translateTexts } from '../../lib/translate'
+import { compressImage } from '../../lib/imageCompress'
 
 interface Props {
   categories: Category[]
@@ -205,11 +206,12 @@ export default function BulkImport({ categories, phoneDefault, onDone }: Props) 
     try {
       const res = await fetch(url, { mode: 'cors' })
       if (!res.ok) return url
-      const blob = await res.blob()
+      let blob = await res.blob()
+      blob = await compressImage(blob, 1600, 0.8)
       const contentType = blob.type || 'image/jpeg'
       const extFromType = contentType.split('/')[1]?.split('+')[0] || 'jpg'
       const extFromUrl = url.split('?')[0].split('.').pop()?.toLowerCase()
-      const ext = (extFromUrl && extFromUrl.length <= 4 ? extFromUrl : extFromType) || 'jpg'
+      const ext = contentType === 'image/jpeg' ? 'jpg' : ((extFromUrl && extFromUrl.length <= 4 ? extFromUrl : extFromType) || 'jpg')
       const path = `${listingId}/${Date.now()}_${index}.${ext}`
       const { error } = await supabase.storage.from('listings').upload(path, blob, {
         contentType,
