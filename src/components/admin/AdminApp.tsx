@@ -8,6 +8,7 @@ import ListingsManager from './ListingsManager'
 import CategoriesManager from './CategoriesManager'
 import OfficeSettingsPanel from './OfficeSettings'
 import SlidesManager from './SlidesManager'
+import WorksAdmin from './WorksAdmin'
 import BulkImport from './BulkImport'
 
 export default function AdminApp() {
@@ -87,6 +88,9 @@ export default function AdminApp() {
         </div>
         <div style={{ display: activeTab === 'import' ? 'block' : 'none' }}>
           <BulkImport categories={categories} phoneDefault={phoneDefault} onDone={() => loadData(true)} />
+        </div>
+        <div style={{ display: activeTab === 'works' ? 'block' : 'none' }}>
+          <WorksAdmin />
         </div>
         <div style={{ display: activeTab === 'slides' ? 'block' : 'none' }}>
           <SlidesManager />

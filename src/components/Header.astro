@@ -1,6 +1,6 @@
 ---
-import { getCategories, getOfficeSettings, officePhones } from '../lib/supabase'
-import type { Category } from '../lib/supabase'
+import { getCategories, getOfficeSettings, getWorkCategories, officePhones } from '../lib/supabase'
+import type { Category, WorkCategory } from '../lib/supabase'
 import PhoneIcon from './PhoneIcon.astro'
 import Flag from './Flag.astro'
 import { t, localizePath, withBase, pick, languages, type Lang } from '../i18n/utils'
@@ -12,6 +12,7 @@ export interface Props {
 const lang: Lang = Astro.props.lang ?? 'el'
 
 const categories = await getCategories()
+const workCategories = await getWorkCategories()
 const settings = await getOfficeSettings()
 
 const phones = officePhones(settings)
@@ -38,6 +39,7 @@ const navItems = [
   { href: localizePath('/', lang), label: t(lang, 'nav.home') },
   { href: localizePath('/agora', lang), label: t(lang, 'nav.agora') },
   { href: localizePath('/enoikiasi', lang), label: t(lang, 'nav.enoikiasi') },
+  { href: localizePath('/ergasies', lang), label: t(lang, 'nav.ergasies') },
   { href: localizePath('/grafeio', lang), label: t(lang, 'nav.grafeio') },
 ]
 ---
@@ -102,6 +104,27 @@ const navItems = [
               {enoikiasiCategories.filter(c => !c.parent_id).map(cat => (
                 <a href={localizePath(`/enoikiasi/${cat.slug}`, lang)} class="block px-4 py-2.5 text-sm text-gray-700 hover:text-primary hover:bg-gray-50 transition-colors">
                   {catName(cat)}
+                </a>
+              ))}
+            </div>
+          </div>
+        </div>
+
+        <!-- Εργασίες Dropdown -->
+        <div class="relative group">
+          <a href={localizePath('/ergasies', lang)} class="px-4 py-2 text-sm font-medium text-gray-700 hover:text-primary hover:bg-gray-50 rounded-lg transition-colors inline-flex items-center gap-1">
+            {t(lang, 'nav.ergasies')}
+            <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
+          </a>
+          <div class="absolute left-0 top-full pt-2 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200">
+            <div class="bg-white rounded-xl shadow-xl border border-gray-100 py-2 min-w-[240px]">
+              <a href={localizePath('/ergasies', lang)} class="block px-4 py-2.5 text-sm text-gray-700 hover:text-primary hover:bg-gray-50 font-medium">
+                {t(lang, 'nav.allListings')}
+              </a>
+              {workCategories.length > 0 && <div class="border-t border-gray-100 my-1"></div>}
+              {workCategories.map(cat => (
+                <a href={localizePath(`/ergasies/${cat.slug}`, lang)} class="block px-4 py-2.5 text-sm text-gray-700 hover:text-primary hover:bg-gray-50 transition-colors">
+                  {pick(lang, cat.name_el, cat.name_en)}
                 </a>
               ))}
             </div>

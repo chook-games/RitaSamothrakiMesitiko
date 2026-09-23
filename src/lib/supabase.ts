@@ -147,6 +147,50 @@ export async function getHeroSlides(): Promise<HeroSlide[]> {
   return data || []
 }
 
+export interface WorkCategory {
+  id: string
+  name_el: string
+  name_en: string | null
+  slug: string
+  order: number | null
+  created_at: string
+}
+
+export interface Work {
+  id: string
+  category_id: string | null
+  title_el: string | null
+  title_en: string | null
+  description_el: string | null
+  description_en: string | null
+  image_url: string | null
+  order: number | null
+  is_active: boolean | null
+  created_at: string
+  category?: WorkCategory | null
+}
+
+export async function getWorkCategories(): Promise<WorkCategory[]> {
+  if (IS_PLACEHOLDER) return []
+  const { data } = await supabase
+    .from('work_categories')
+    .select('*')
+    .order('order', { ascending: true })
+  return data || []
+}
+
+export async function getWorks(options?: { categoryId?: string; activeOnly?: boolean }): Promise<Work[]> {
+  if (IS_PLACEHOLDER) return []
+  let query = supabase
+    .from('works')
+    .select('*, category:work_categories(*)')
+    .order('order', { ascending: true })
+  if (options?.categoryId) query = query.eq('category_id', options.categoryId)
+  if (options?.activeOnly !== false) query = query.eq('is_active', true)
+  const { data } = await query
+  return (data as Work[]) || []
+}
+
 // Database functions
 export async function getOfficeSettings(): Promise<OfficeSettings | null> {
   if (IS_PLACEHOLDER) return null
