@@ -12,7 +12,7 @@ import ServicesAdmin from './ServicesAdmin'
 import BulkImport from './BulkImport'
 
 // Cloudflare Pages deploy hook — triggers a rebuild so public changes go live.
-const DEPLOY_HOOK = 'https://api.cloudflare.com/client/v4/pages/webhooks/deploy_hooks/ade8a406-7b64-4a82-9ab9-525550dba9bf'
+const DEPLOY_HOOK = 'https://api.cloudflare.com/client/v4/pages/webhooks/deploy_hooks/c7562a96-19b7-4efc-bd34-ba5f329fec12'
 
 export default function AdminApp() {
   const { user, loading, error, signIn, signOut } = useAuth()
