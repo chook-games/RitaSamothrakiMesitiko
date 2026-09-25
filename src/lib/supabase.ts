@@ -147,7 +147,7 @@ export async function getHeroSlides(): Promise<HeroSlide[]> {
   return data || []
 }
 
-export interface WorkCategory {
+export interface ServiceSection {
   id: string
   name_el: string
   name_en: string | null
@@ -156,39 +156,64 @@ export interface WorkCategory {
   created_at: string
 }
 
-export interface Work {
+export interface ServiceImage {
   id: string
-  category_id: string | null
+  service_id: string
+  url: string
+  caption_el: string | null
+  caption_en: string | null
+  order: number | null
+  created_at: string
+}
+
+export interface Service {
+  id: string
+  section_id: string | null
   title_el: string | null
   title_en: string | null
+  slug: string
   description_el: string | null
   description_en: string | null
-  image_url: string | null
   order: number | null
   is_active: boolean | null
   created_at: string
-  category?: WorkCategory | null
+  section?: ServiceSection | null
+  images?: ServiceImage[]
 }
 
-export async function getWorkCategories(): Promise<WorkCategory[]> {
+export async function getServiceSections(): Promise<ServiceSection[]> {
   if (IS_PLACEHOLDER) return []
   const { data } = await supabase
-    .from('work_categories')
+    .from('service_sections')
     .select('*')
     .order('order', { ascending: true })
   return data || []
 }
 
-export async function getWorks(options?: { categoryId?: string; activeOnly?: boolean }): Promise<Work[]> {
+export async function getServices(options?: { sectionId?: string; activeOnly?: boolean; withImages?: boolean }): Promise<Service[]> {
   if (IS_PLACEHOLDER) return []
+  const select = options?.withImages
+    ? '*, section:service_sections(*), images:service_images(*)'
+    : '*, section:service_sections(*)'
   let query = supabase
-    .from('works')
-    .select('*, category:work_categories(*)')
+    .from('services')
+    .select(select)
     .order('order', { ascending: true })
-  if (options?.categoryId) query = query.eq('category_id', options.categoryId)
+  if (options?.sectionId) query = query.eq('section_id', options.sectionId)
   if (options?.activeOnly !== false) query = query.eq('is_active', true)
   const { data } = await query
-  return (data as Work[]) || []
+  return (data as Service[]) || []
+}
+
+export async function getService(sectionId: string, slug: string): Promise<Service | null> {
+  if (IS_PLACEHOLDER) return null
+  const { data } = await supabase
+    .from('services')
+    .select('*, section:service_sections(*), images:service_images(*)')
+    .eq('section_id', sectionId)
+    .eq('slug', slug)
+    .single()
+  return (data as Service) || null
 }
 
 // Database functions

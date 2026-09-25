@@ -1,0 +1,13 @@
+---
+import ServicesSectionPage from '../../../components/pages/ServicesSectionPage.astro'
+import { getServiceSections } from '../../../lib/supabase'
+
+export async function getStaticPaths() {
+  const sections = await getServiceSections()
+  return sections.map(sec => ({ params: { section: sec.slug }, props: { section: sec } }))
+}
+
+const { section } = Astro.props
+---
+
+<ServicesSectionPage section={section} lang="el" />

@@ -19,7 +19,6 @@ export const ui = {
     'nav.home': 'Αρχική',
     'nav.agora': 'Αγορά',
     'nav.enoikiasi': 'Ενοικίαση',
-    'nav.ergasies': 'Εργασίες',
     'nav.poulithike': 'Πουλήθηκε',
     'nav.grafeio': 'Το Γραφείο',
     'nav.allListings': 'Όλες οι αγγελίες',
@@ -91,11 +90,9 @@ export const ui = {
     'office.buyProperties': 'Αγορά Ακινήτων',
     'office.rentProperties': 'Ενοικίαση Ακινήτων',
 
-    'works.kicker': 'Οι Υπηρεσίες μας',
-    'works.title': 'Εργασίες',
-    'works.subtitle': 'Αναλαμβάνουμε τεχνικές εργασίες, σιδεροκατασκευές και καθαρισμούς οικοπέδων.',
-    'works.empty': 'Δεν υπάρχουν εργασίες ακόμη.',
-    'works.categoryEmpty': 'Δεν υπάρχουν εργασίες σε αυτή την κατηγορία.',
+    'services.empty': 'Δεν υπάρχουν καταχωρήσεις ακόμη.',
+    'services.contact': 'Επικοινωνήστε μαζί μας',
+    'services.contactDesc': 'Ζητήστε προσφορά ή περισσότερες πληροφορίες για αυτή την υπηρεσία.',
 
     'meta.homeTitle': 'Rita Samothraki - Μεσιτικό Γραφείο | Αγοραπωλησίες & Ενοικιάσεις Ακινήτων',
     'meta.homeDescription': 'Επαγγελματικές υπηρεσίες μεσιτείας με αξιοπιστία και εμπειρία',
@@ -103,7 +100,6 @@ export const ui = {
     'meta.enoikiasiTitle': 'Ενοικίαση Ακινήτων',
     'meta.poulithikeTitle': 'Πουλήθηκε',
     'meta.grafeioTitle': 'Το Γραφείο',
-    'meta.ergasiesTitle': 'Εργασίες',
   },
   en: {
     'common.realEstateOffice': 'Real Estate Agency',
@@ -115,7 +111,6 @@ export const ui = {
     'nav.home': 'Home',
     'nav.agora': 'Buy',
     'nav.enoikiasi': 'Rent',
-    'nav.ergasies': 'Services',
     'nav.poulithike': 'Sold',
     'nav.grafeio': 'About Us',
     'nav.allListings': 'All listings',
@@ -187,11 +182,9 @@ export const ui = {
     'office.buyProperties': 'Properties for Sale',
     'office.rentProperties': 'Properties for Rent',
 
-    'works.kicker': 'Our Services',
-    'works.title': 'Services',
-    'works.subtitle': 'We undertake technical works, metal constructions and land clearing.',
-    'works.empty': 'No services yet.',
-    'works.categoryEmpty': 'No services in this category yet.',
+    'services.empty': 'No entries yet.',
+    'services.contact': 'Contact us',
+    'services.contactDesc': 'Request a quote or more information about this service.',
 
     'meta.homeTitle': 'Rita Samothraki - Real Estate Agency | Property Sales & Rentals',
     'meta.homeDescription': 'Professional real estate services built on trust and experience',
@@ -199,7 +192,6 @@ export const ui = {
     'meta.enoikiasiTitle': 'Properties for Rent',
     'meta.poulithikeTitle': 'Sold Properties',
     'meta.grafeioTitle': 'About Us',
-    'meta.ergasiesTitle': 'Services',
   },
   de: {
     'common.realEstateOffice': 'Immobilienbüro',
@@ -211,7 +203,6 @@ export const ui = {
     'nav.home': 'Startseite',
     'nav.agora': 'Kaufen',
     'nav.enoikiasi': 'Mieten',
-    'nav.ergasies': 'Leistungen',
     'nav.poulithike': 'Verkauft',
     'nav.grafeio': 'Über uns',
     'nav.allListings': 'Alle Angebote',
@@ -283,11 +274,9 @@ export const ui = {
     'office.buyProperties': 'Immobilien zum Kauf',
     'office.rentProperties': 'Immobilien zur Miete',
 
-    'works.kicker': 'Unsere Leistungen',
-    'works.title': 'Leistungen',
-    'works.subtitle': 'Wir übernehmen technische Arbeiten, Metallkonstruktionen und Grundstücksreinigung.',
-    'works.empty': 'Noch keine Leistungen.',
-    'works.categoryEmpty': 'Noch keine Leistungen in dieser Kategorie.',
+    'services.empty': 'Noch keine Einträge.',
+    'services.contact': 'Kontaktieren Sie uns',
+    'services.contactDesc': 'Fordern Sie ein Angebot oder weitere Informationen zu dieser Leistung an.',
 
     'meta.homeTitle': 'Rita Samothraki - Immobilienbüro | Verkauf & Vermietung',
     'meta.homeDescription': 'Professionelle Immobiliendienstleistungen mit Vertrauen und Erfahrung',
@@ -295,7 +284,6 @@ export const ui = {
     'meta.enoikiasiTitle': 'Immobilien zur Miete',
     'meta.poulithikeTitle': 'Verkaufte Immobilien',
     'meta.grafeioTitle': 'Über uns',
-    'meta.ergasiesTitle': 'Leistungen',
   },
 } as const
 
