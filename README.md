@@ -133,31 +133,32 @@ npm run build
 
 ### Cloudflare Pages (production — root domain)
 
-1. Cloudflare Dashboard → **Workers & Pages → Create → Pages → Connect to Git** → διάλεξε το repo.
-2. Build settings: Framework **Astro**, Build command `npm run build`, Output directory `dist`.
-3. Environment variables:
-   - `PUBLIC_SUPABASE_URL`
-   - `PUBLIC_SUPABASE_ANON_KEY`
-   - (προαιρετικά) `PUBLIC_SITE_URL=https://realestate.samothraki.gr`
-   - `NODE_VERSION=22`
-4. Custom domain: Pages project → **Custom domains** → πρόσθεσε το domain (CNAME στο DNS σου).
-5. Κάθε push στο `master` κάνει αυτόματα deploy.
+Το project **`rita-samothraki`** είναι συνδεδεμένο με το GitHub repo (Git integration), οπότε:
+- **κάθε `git push` στο `master`** → αυτόματο build & deploy από το Cloudflare.
+- **«Δημοσίευση» κουμπί στο admin** → καλεί ένα Cloudflare **Deploy Hook** που ξαναχτίζει το site (1-2 λεπτά), ώστε οι αλλαγές περιεχομένου από το Supabase να γίνουν ορατές χωρίς push.
 
-Το `astro.config.mjs` χρησιμοποιεί `base: '/'` όταν το `DEPLOY_TARGET` δεν είναι `ghpages` — άρα Cloudflare σερβίρει στη ρίζα του domain.
+Build settings: command `npm run build`, output `dist`. Env vars: `PUBLIC_SUPABASE_URL`, `PUBLIC_SUPABASE_ANON_KEY`, `NODE_VERSION=22`, `PUBLIC_SITE_URL=https://realestate-samothraki.gr`.
+Custom domains: `realestate-samothraki.gr` + `www` (DNS στο Cloudflare — nameservers του domain).
 
-### GitHub Pages (προσωρινά / εναλλακτικά)
+Το `astro.config.mjs` χρησιμοποιεί `base: '/'` (Cloudflare) και `base: '/RitaSamothrakiMesitiko'` μόνο όταν τρέχει σε GitHub Actions.
 
-Κάθε push στο `master` κάνει build & deploy μέσω GitHub Actions (`.github/workflows/deploy.yml`) με `DEPLOY_TARGET=ghpages`, ώστε να κρατάει το base `/RitaSamothrakiMesitiko`.
+### GitHub Pages (εναλλακτικό/εφεδρικό)
 
-Secrets που χρειάζονται στο repo:
-- `PUBLIC_SUPABASE_URL`
-- `PUBLIC_SUPABASE_ANON_KEY`
+Κάθε push στο `master` κάνει build & deploy μέσω GitHub Actions (`.github/workflows/deploy.yml`) με `DEPLOY_TARGET=ghpages`.
 
-### Supabase (καινούργιο domain)
+### Supabase (domain)
 
 Authentication → URL Configuration:
-- **Site URL**: `https://realestate.samothraki.gr`
-- **Redirect URLs**: `https://realestate.samothraki.gr/**`
+- **Site URL**: `https://realestate-samothraki.gr`
+- **Redirect URLs**: `https://realestate-samothraki.gr/**`
+
+## 🔄 Ροή ενημέρωσης περιεχομένου
+
+1. Αλλάζεις κάτι στο **admin** (αγγελία, φωτογραφία, υπηρεσία, slide) → αποθηκεύεται στο Supabase.
+2. Πατάς **«Δημοσίευση»** (πάνω δεξιά στο admin).
+3. Σε 1-2 λεπτά οι αλλαγές είναι live στο `realestate-samothraki.gr`.
+
+Οι αλλαγές σε **κώδικα** γίνονται live αυτόματα με `git push`.
 
 ## 🎯 Μελλοντικές Βελτιώσεις
 
