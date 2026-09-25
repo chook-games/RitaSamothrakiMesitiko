@@ -11,6 +11,9 @@ import SlidesManager from './SlidesManager'
 import ServicesAdmin from './ServicesAdmin'
 import BulkImport from './BulkImport'
 
+// Cloudflare Pages deploy hook — triggers a rebuild so public changes go live.
+const DEPLOY_HOOK = 'https://api.cloudflare.com/client/v4/pages/webhooks/deploy_hooks/ade8a406-7b64-4a82-9ab9-525550dba9bf'
+
 export default function AdminApp() {
   const { user, loading, error, signIn, signOut } = useAuth()
   const [activeTab, setActiveTab] = useState('dashboard')
@@ -19,7 +22,22 @@ export default function AdminApp() {
   const [settings, setSettings] = useState<OfficeSettings | null>(null)
   const [dataLoading, setDataLoading] = useState(true)
   const [isRefreshing, setIsRefreshing] = useState(false)
+  const [publishing, setPublishing] = useState(false)
+  const [publishMsg, setPublishMsg] = useState('')
   const hasLoadedRef = useRef(false)
+
+  const publish = async () => {
+    setPublishing(true)
+    setPublishMsg('')
+    try {
+      const res = await fetch(DEPLOY_HOOK, { method: 'POST' })
+      setPublishMsg(res.ok ? 'Η δημοσίευση ξεκίνησε (1-2 λεπτά).' : 'Αποτυχία δημοσίευσης.')
+    } catch {
+      setPublishMsg('Αποτυχία δημοσίευσης.')
+    }
+    setPublishing(false)
+    setTimeout(() => setPublishMsg(''), 8000)
+  }
 
   const loadData = async (silent = false) => {
     if (!silent) setDataLoading(true)
@@ -73,11 +91,23 @@ export default function AdminApp() {
 
   return (
     <div className="min-h-screen bg-gray-50 flex">
-      {isRefreshing && (
-        <div className="fixed top-4 right-4 z-50 px-3 py-1.5 bg-white shadow-lg rounded-full text-xs text-gray-500 border border-gray-200 animate-pulse">
-          Ανανέωση...
-        </div>
-      )}
+      <div className="fixed top-4 right-4 z-50 flex flex-col items-end gap-2">
+        {publishMsg && (
+          <div className="px-3 py-1.5 bg-white shadow-lg rounded-full text-xs text-gray-600 border border-gray-200">{publishMsg}</div>
+        )}
+        {isRefreshing && (
+          <div className="px-3 py-1.5 bg-white shadow-lg rounded-full text-xs text-gray-500 border border-gray-200 animate-pulse">Ανανέωση...</div>
+        )}
+        <button
+          onClick={publish}
+          disabled={publishing}
+          className="inline-flex items-center gap-2 px-4 py-2.5 bg-green-600 text-white text-sm font-semibold rounded-xl shadow-lg hover:bg-green-700 transition-colors disabled:opacity-60"
+          title="Δημοσίευση στο site (rebuild)"
+        >
+          <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7"/></svg>
+          {publishing ? 'Δημοσίευση...' : 'Δημοσίευση'}
+        </button>
+      </div>
       <Sidebar activeTab={activeTab} onTabChange={setActiveTab} onSignOut={signOut} />
       <main className="flex-1 overflow-y-auto">
         <div style={{ display: activeTab === 'dashboard' ? 'block' : 'none' }}>
