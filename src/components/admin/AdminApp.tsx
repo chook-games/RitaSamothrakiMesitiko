@@ -9,6 +9,7 @@ import CategoriesManager from './CategoriesManager'
 import OfficeSettingsPanel from './OfficeSettings'
 import SlidesManager from './SlidesManager'
 import ServicesAdmin from './ServicesAdmin'
+import TranslateAdmin from './TranslateAdmin'
 import BulkImport from './BulkImport'
 
 // Cloudflare Pages deploy hook — triggers a rebuild so public changes go live.
@@ -121,6 +122,9 @@ export default function AdminApp() {
         </div>
         <div style={{ display: activeTab === 'services' ? 'block' : 'none' }}>
           <ServicesAdmin />
+        </div>
+        <div style={{ display: activeTab === 'translate' ? 'block' : 'none' }}>
+          <TranslateAdmin />
         </div>
         <div style={{ display: activeTab === 'slides' ? 'block' : 'none' }}>
           <SlidesManager />
