@@ -2,6 +2,7 @@ import React, { useState } from 'react'
 import { supabase } from '../../lib/supabase'
 import type { Listing, Category } from '../../lib/supabase'
 import { translateTexts } from '../../lib/translate'
+import { compressImage } from '../../lib/imageCompress'
 import ListingImages from './ListingImages'
 
 export default function ListingForm({ listing, categories, phoneDefault, onSave, onCancel }: {
@@ -27,6 +28,14 @@ export default function ListingForm({ listing, categories, phoneDefault, onSave,
   const types = ['agora', 'enoikiasi'] as const
   const [selectedType, setSelectedType] = useState<string>(listing?.category?.type || 'agora')
   const filteredCategories = categories.filter(c => c.type === selectedType && !c.parent_id)
+  const [pendingFiles, setPendingFiles] = useState<File[]>([])
+
+  const addPendingFiles = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = Array.from(e.target.files || [])
+    setPendingFiles(prev => [...prev, ...files])
+    e.target.value = ''
+  }
+  const removePendingFile = (i: number) => setPendingFiles(prev => prev.filter((_, idx) => idx !== i))
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -50,8 +59,21 @@ export default function ListingForm({ listing, categories, phoneDefault, onSave,
       const { error } = await supabase.from('listings').update(listingData).eq('id', listing.id)
       if (error) { alert('Σφάλμα: ' + error.message); return }
     } else {
-      const { error } = await supabase.from('listings').insert(listingData)
-      if (error) { alert('Σφάλμα: ' + error.message); return }
+      const { data: inserted, error } = await supabase.from('listings').insert(listingData).select('id').single()
+      if (error || !inserted) { alert('Σφάλμα: ' + (error?.message || '')); return }
+
+      // Upload the photos chosen before saving
+      let order = 0
+      for (const file of pendingFiles) {
+        order++
+        const compressed = await compressImage(file, 1600, 0.8)
+        const ext = compressed.type === 'image/jpeg' ? 'jpg' : (file.name.split('.').pop() || 'jpg')
+        const path = `${inserted.id}/${Date.now()}_${order}.${ext}`
+        const { error: upErr } = await supabase.storage.from('listings').upload(path, compressed, { upsert: true, contentType: compressed.type || 'image/jpeg' })
+        if (upErr) continue
+        const { data: pub } = supabase.storage.from('listings').getPublicUrl(path)
+        await supabase.from('listing_images').insert({ listing_id: inserted.id, url: pub.publicUrl, order, is_primary: order === 1 })
+      }
     }
     onSave()
   }
@@ -241,8 +263,33 @@ export default function ListingForm({ listing, categories, phoneDefault, onSave,
         </div>
       </form>
 
-      {/* Image management */}
+      {/* Image management (existing listing) */}
       {listing && <ListingImages listing={listing} />}
+
+      {/* Photos chosen before saving (new listing) */}
+      {!listing && (
+        <div className="mt-6 pt-6 border-t border-gray-100">
+          <div className="flex items-center justify-between mb-3">
+            <h3 className="text-sm font-semibold text-gray-900">Φωτογραφίες</h3>
+            <label className="inline-flex items-center gap-2 px-4 py-2.5 bg-gray-100 text-gray-700 text-sm font-medium rounded-xl hover:bg-gray-200 cursor-pointer transition-colors">
+              <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
+              Προσθήκη Φωτογραφιών
+              <input type="file" accept="image/*" multiple onChange={addPendingFiles} className="hidden" />
+            </label>
+          </div>
+          <p className="text-xs text-gray-400 mb-3">Ανέβασε όσες φωτογραφίες θέλεις — θα ανεβούν αυτόματα μόλις πατήσεις «Δημιουργία».</p>
+          {pendingFiles.length > 0 && (
+            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
+              {pendingFiles.map((f, i) => (
+                <div key={i} className="relative aspect-[4/3] rounded-xl overflow-hidden bg-gray-100 border border-gray-100">
+                  <img src={URL.createObjectURL(f)} alt="" className="w-full h-full object-cover" />
+                  <button type="button" onClick={() => removePendingFile(i)} className="absolute top-1 right-1 w-6 h-6 bg-red-500 text-white rounded-full flex items-center justify-center text-xs" title="Αφαίρεση">✕</button>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
     </div>
   )
 }
